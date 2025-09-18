@@ -1,6 +1,15 @@
-namespace ShippingAddressService.Controllers;
+using Microsoft.AspNetCore.Mvc;
 
-public class ShippingAddressesController
+namespace ShippingAddressService.Controllers
 {
-    
+    [ApiController]
+    [Route("api/shipping-addresses")]
+    public class ShippingAddressesController : ControllerBase
+    {
+        [HttpGet]
+        public IActionResult GetShippingAddresses()
+        {
+            return Ok(new[] { "Address1", "Address2" });
+        }
+    }
 }

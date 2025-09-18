@@ -1,6 +1,15 @@
-namespace PaymentService.Controllers;
+using Microsoft.AspNetCore.Mvc;
 
-public class PaymentsController
+namespace PaymentService.Controllers
 {
-    
+    [ApiController]
+    [Route("api/payments")]
+    public class PaymentsController : ControllerBase
+    {
+        [HttpGet]
+        public IActionResult GetPayments()
+        {
+            return Ok(new[] { "Payment1", "Payment2" });
+        }
+    }
 }

@@ -1,0 +1,5 @@
+using Loft.Common.Enums;
+
+namespace Loft.Common.DTOs;
+
+public record ProductDTO(long Id,long SellerId,string Name,decimal Price,int StockQuantity,long CategoryId,DeliveryType DeliveryType);

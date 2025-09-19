@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using PaymentService.Mappings;
 
 namespace PaymentService
 {
@@ -12,6 +13,8 @@ namespace PaymentService
 
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
+            builder.Services.AddAutoMapper(typeof(PaymentProfile));
+
 
             var app = builder.Build();
 

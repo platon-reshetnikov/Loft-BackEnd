@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using OrderService.Mappings;
 
 namespace OrderService
 {
@@ -12,6 +13,8 @@ namespace OrderService
 
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
+            builder.Services.AddAutoMapper(typeof(OrderProfile));
+
 
             var app = builder.Build();
 

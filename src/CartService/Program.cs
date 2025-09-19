@@ -1,3 +1,4 @@
+using CartService.Mappings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,8 @@ namespace CartService
 
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
+            builder.Services.AddAutoMapper(typeof(CartProfile));
+
 
             var app = builder.Build();
 

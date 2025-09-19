@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ProductService.Mappings;
 
 namespace ProductService
 {
@@ -12,6 +13,7 @@ namespace ProductService
 
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
+            builder.Services.AddAutoMapper(typeof(ProductProfile));
 
             var app = builder.Build();
 

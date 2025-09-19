@@ -1,3 +1,4 @@
+using CategoryService.Mappings;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,8 @@ namespace CategoryService
 
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
+            builder.Services.AddAutoMapper(typeof(CategoryProfile));
+
 
             var app = builder.Build();
 

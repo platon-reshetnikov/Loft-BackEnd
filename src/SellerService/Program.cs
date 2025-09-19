@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using SellerService.Mappings;
 
 namespace SellerService
 {
@@ -12,6 +13,8 @@ namespace SellerService
 
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
+            builder.Services.AddAutoMapper(typeof(SellerProfile));
+
 
             var app = builder.Build();
 

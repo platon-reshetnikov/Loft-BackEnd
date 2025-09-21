@@ -129,7 +129,7 @@
             },
             "Microsoft.Identity.Web": {
               "target": "Package",
-              "version": "[3.2.0, )"
+              "version": "[3.8.2, )"
             },
             "Microsoft.Identity.Web.DownstreamApi": {
               "target": "Package",
@@ -230,7 +230,7 @@
             },
             "Microsoft.Identity.Web": {
               "target": "Package",
-              "version": "[3.2.0, )"
+              "version": "[3.8.2, )"
             },
             "Microsoft.Identity.Web.DownstreamApi": {
               "target": "Package",

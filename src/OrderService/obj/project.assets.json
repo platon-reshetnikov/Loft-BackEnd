@@ -1192,7 +1192,7 @@
           "Loft.Common": "1.0.0",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.20",
           "Microsoft.AspNetCore.Authentication.OpenIdConnect": "8.0.20",
-          "Microsoft.Identity.Web": "3.2.0",
+          "Microsoft.Identity.Web": "3.8.2",
           "Microsoft.Identity.Web.DownstreamApi": "3.2.0",
           "SellerService": "1.0.0",
           "Swashbuckle.AspNetCore": "6.6.2"
@@ -1216,7 +1216,7 @@
           "Loft.Common": "1.0.0",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.20",
           "Microsoft.AspNetCore.Authentication.OpenIdConnect": "8.0.20",
-          "Microsoft.Identity.Web": "3.2.0",
+          "Microsoft.Identity.Web": "3.8.2",
           "Microsoft.Identity.Web.DownstreamApi": "3.2.0",
           "Swashbuckle.AspNetCore": "6.6.2"
         },
@@ -1238,7 +1238,7 @@
           "AutoMapper.Extensions.Microsoft.DependencyInjection": "12.0.1",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.20",
           "Microsoft.AspNetCore.Authentication.OpenIdConnect": "8.0.20",
-          "Microsoft.Identity.Web": "3.2.0",
+          "Microsoft.Identity.Web": "3.8.2",
           "Microsoft.Identity.Web.DownstreamApi": "3.2.0",
           "Swashbuckle.AspNetCore": "6.6.2",
           "UserService": "1.0.0"
@@ -1262,7 +1262,7 @@
           "Loft.Common": "1.0.0",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "8.0.20",
           "Microsoft.AspNetCore.Authentication.OpenIdConnect": "8.0.20",
-          "Microsoft.Identity.Web": "3.2.0",
+          "Microsoft.Identity.Web": "3.8.2",
           "Microsoft.Identity.Web.DownstreamApi": "3.2.0",
           "Swashbuckle.AspNetCore": "6.6.2"
         },
@@ -3422,6 +3422,15 @@
       "level": "Warning",
       "warningLevel": 1,
       "message": "Package 'Microsoft.Identity.Web' 3.2.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-rpq8-q44m-2rpg",
+      "libraryId": "Microsoft.Identity.Web",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1605",
+      "level": "Error",
+      "message": "Warning As Error: Detected package downgrade: Microsoft.Identity.Web from 3.8.2 to 3.2.0. Reference the package directly from the project to select a different version. \n OrderService -> ProductService -> Microsoft.Identity.Web (>= 3.8.2) \n OrderService -> Microsoft.Identity.Web (>= 3.2.0)",
       "libraryId": "Microsoft.Identity.Web",
       "targetGraphs": [
         "net8.0"

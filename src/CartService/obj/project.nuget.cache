@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "dgSpecHash": "XQXPxfNfDHY=",
-  "success": true,
+  "dgSpecHash": "BSbVFd2cZbA=",
+  "success": false,
   "projectFilePath": "/Users/platon/RiderProjects/LoftBackEnd/src/CartService/CartService.csproj",
   "expectedPackageFiles": [
     "/Users/platon/.nuget/packages/automapper/15.0.1/automapper.15.0.1.nupkg.sha512",
@@ -89,6 +89,17 @@
       "message": "Package 'Microsoft.Identity.Web' 3.2.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-rpq8-q44m-2rpg",
       "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/CartService/CartService.csproj",
       "warningLevel": 1,
+      "filePath": "/Users/platon/RiderProjects/LoftBackEnd/src/CartService/CartService.csproj",
+      "libraryId": "Microsoft.Identity.Web",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    },
+    {
+      "code": "NU1605",
+      "level": "Error",
+      "message": "Warning As Error: Detected package downgrade: Microsoft.Identity.Web from 3.8.2 to 3.2.0. Reference the package directly from the project to select a different version. \n CartService -> ProductService -> Microsoft.Identity.Web (>= 3.8.2) \n CartService -> Microsoft.Identity.Web (>= 3.2.0)",
+      "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/CartService/CartService.csproj",
       "filePath": "/Users/platon/RiderProjects/LoftBackEnd/src/CartService/CartService.csproj",
       "libraryId": "Microsoft.Identity.Web",
       "targetGraphs": [

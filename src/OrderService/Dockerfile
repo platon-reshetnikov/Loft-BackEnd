@@ -6,13 +6,31 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["OrderService.csproj", "."]
-RUN dotnet restore "OrderService.csproj"
-COPY . .
+# Копируем глобальные настройки (Directory.Build.props) прежде, чем делать restore
+COPY ["Directory.Build.props", "./"]
+# Копируем все .csproj из src, чтобы dotnet restore увидел все ProjectReference (включая транзитивные)
+COPY ["src/ApiGateway/ApiGateway.csproj", "ApiGateway/"]
+COPY ["src/CartService/CartService.csproj", "CartService/"]
+COPY ["src/CategoryService/CategoryService.csproj", "CategoryService/"]
+COPY ["src/Common/Loft.Common/Loft.Common.csproj", "Common/Loft.Common/"]
+COPY ["src/OrderService/OrderService.csproj", "OrderService/"]
+COPY ["src/PaymentService/PaymentService.csproj", "PaymentService/"]
+COPY ["src/ProductService/ProductService.csproj", "ProductService/"]
+COPY ["src/SellerService/SellerService.csproj", "SellerService/"]
+COPY ["src/ShippingAddressService/ShippingAddressService.csproj", "ShippingAddressService/"]
+COPY ["src/UserService/UserService.csproj", "UserService/"]
+
+RUN dotnet restore "OrderService/OrderService.csproj"
+
+# Копируем все исходники
+COPY src/ .
+
+WORKDIR /src/OrderService
 RUN dotnet build "OrderService.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
+WORKDIR /src/OrderService
 RUN dotnet publish "OrderService.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final

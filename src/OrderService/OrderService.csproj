@@ -32,4 +32,11 @@
       <ProjectReference Include="..\UserService\UserService.csproj" />
     </ItemGroup>
 
+    <!-- Разрешаем публикацию appsettings только для этого проекта -->
+    <ItemGroup>
+      <Content Update="appsettings*.json">
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>

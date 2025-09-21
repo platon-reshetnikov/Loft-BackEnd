@@ -19,14 +19,21 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="..\..\.dockerignore">
+      <Content Include="..\\..\\.dockerignore">
         <Link>.dockerignore</Link>
       </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Common\Loft.Common\Loft.Common.csproj" />
-      <ProjectReference Include="..\SellerService\SellerService.csproj" />
+      <ProjectReference Include="..\\Common\\Loft.Common\\Loft.Common.csproj" />
+      <ProjectReference Include="..\\SellerService\\SellerService.csproj" />
+    </ItemGroup>
+
+    <!-- Не публиковать appsettings из этого проекта -->
+    <ItemGroup>
+      <Content Update="appsettings*.json">
+        <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

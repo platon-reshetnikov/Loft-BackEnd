@@ -1129,7 +1129,7 @@
           "bin/placeholder/Loft.Common.dll": {}
         }
       },
-      "SellerService/1.0.0": {
+      "UserService/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v8.0",
         "dependencies": {
@@ -1143,10 +1143,10 @@
           "Swashbuckle.AspNetCore": "6.6.2"
         },
         "compile": {
-          "bin/placeholder/SellerService.dll": {}
+          "bin/placeholder/UserService.dll": {}
         },
         "runtime": {
-          "bin/placeholder/SellerService.dll": {}
+          "bin/placeholder/UserService.dll": {}
         },
         "frameworkReferences": [
           "Microsoft.AspNetCore.App"
@@ -3102,10 +3102,10 @@
       "path": "../Common/Loft.Common/Loft.Common.csproj",
       "msbuildProject": "../Common/Loft.Common/Loft.Common.csproj"
     },
-    "SellerService/1.0.0": {
+    "UserService/1.0.0": {
       "type": "project",
-      "path": "../SellerService/SellerService.csproj",
-      "msbuildProject": "../SellerService/SellerService.csproj"
+      "path": "../UserService/UserService.csproj",
+      "msbuildProject": "../UserService/UserService.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -3117,8 +3117,8 @@
       "Microsoft.AspNetCore.Authentication.OpenIdConnect >= 8.0.20",
       "Microsoft.Identity.Web >= 3.8.2",
       "Microsoft.Identity.Web.DownstreamApi >= 3.2.0",
-      "SellerService >= 1.0.0",
-      "Swashbuckle.AspNetCore >= 6.6.2"
+      "Swashbuckle.AspNetCore >= 6.6.2",
+      "UserService >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -3149,8 +3149,8 @@
             "/Users/platon/RiderProjects/LoftBackEnd/src/Common/Loft.Common/Loft.Common.csproj": {
               "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/Common/Loft.Common/Loft.Common.csproj"
             },
-            "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/SellerService.csproj": {
-              "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/SellerService.csproj"
+            "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/UserService.csproj": {
+              "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/UserService.csproj"
             }
           }
         }

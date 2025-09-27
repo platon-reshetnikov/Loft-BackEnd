@@ -71,7 +71,7 @@
             },
             "Microsoft.Identity.Web": {
               "target": "Package",
-              "version": "[3.2.0, )"
+              "version": "[3.8.2, )"
             },
             "Microsoft.Identity.Web.DownstreamApi": {
               "target": "Package",
@@ -188,8 +188,8 @@
               "/Users/platon/RiderProjects/LoftBackEnd/src/Common/Loft.Common/Loft.Common.csproj": {
                 "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/Common/Loft.Common/Loft.Common.csproj"
               },
-              "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/SellerService.csproj": {
-                "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/SellerService.csproj"
+              "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/UserService.csproj": {
+                "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/UserService.csproj"
               }
             }
           }
@@ -267,14 +267,14 @@
         }
       }
     },
-    "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/SellerService.csproj": {
+    "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/UserService.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/SellerService.csproj",
-        "projectName": "SellerService",
-        "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/SellerService.csproj",
+        "projectUniqueName": "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/UserService.csproj",
+        "projectName": "UserService",
+        "projectPath": "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/UserService.csproj",
         "packagesPath": "/Users/platon/.nuget/packages/",
-        "outputPath": "/Users/platon/RiderProjects/LoftBackEnd/src/SellerService/obj/",
+        "outputPath": "/Users/platon/RiderProjects/LoftBackEnd/src/UserService/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/platon/.nuget/NuGet/NuGet.Config"

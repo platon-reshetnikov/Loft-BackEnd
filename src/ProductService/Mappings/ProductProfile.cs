@@ -10,7 +10,7 @@ public class ProductProfile : Profile
     {
         CreateMap<Product, ProductDTO>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.SellerId, opt => opt.MapFrom(src => src.SellerId))
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
             .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Price))
             .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.StockQuantity))

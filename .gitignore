@@ -1,5 +1,6 @@
 # Visual Studio / VS Code
 .vscode/
+.vs/
 *.user
 *.suo
 *.userosscache
@@ -21,8 +22,8 @@ obj/
 docker-compose.override.yml
 docker-compose.override.*.yml
 
-# EF Core Migrations (если хочешь коммитить миграции, оставь Migrations/)
-# Migrations/
+# EF Core Migrations (не коммитим миграции)
+src/ProductService/Migrations/
 
 # Node/npm (если есть фронт)
 node_modules/

@@ -12,8 +12,6 @@ public interface IProductService
     Task<ProductDTO?> UpdateProduct(long productId, ProductDTO product);
     Task DeleteProduct(long productId);
     Task<IEnumerable<ProductDTO>> SearchProducts(string query, int page = 1, int pageSize = 20);
-    Task<bool> ReserveStock(long productId, int quantity);
-    Task ReleaseStock(long productId, int quantity);
     Task UpdateStock(long productId, int newQuantity);
     
     

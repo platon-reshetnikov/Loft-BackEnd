@@ -1,0 +1,56 @@
+using Microsoft.AspNetCore.Mvc;
+using Loft.Common.DTOs;
+using UserService.Services;
+using System.ComponentModel.DataAnnotations;
+using UserService.Entities;
+
+namespace UserService.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
+{
+    private readonly IUserService _userService;
+
+    public AuthController(IUserService userService)
+    {
+        _userService = userService;
+    }
+
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] User request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        if (await _userService.IsEmailTaken(request.Email))
+            return BadRequest(new { message = "Email already taken" });
+
+        // For self-registration: role is always CUSTOMER; selling ability is controlled by CanSell flag
+        var userDto = new UserDTO(0, string.Empty, request.Email, Loft.Common.Enums.Role.CUSTOMER.ToString(), request.AvatarUrl ?? string.Empty, request.FirstName ?? string.Empty, request.LastName ?? string.Empty, request.Phone ?? string.Empty, request.CanSell);
+
+        try
+        {
+            var created = await _userService.CreateUser(userDto, request.PasswordHash);
+            return Created($"/api/users/{created.Id}", created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] User request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var user = await _userService.AuthenticateUser(request.Email, request.PasswordHash);
+        if (user == null)
+            return Unauthorized(new { message = "Invalid credentials" });
+
+        return Ok(new { success = true, message = "Authenticated", user });
+    }
+}
+

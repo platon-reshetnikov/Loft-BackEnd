@@ -6,7 +6,7 @@ public interface IUserService
 {
     Task<UserDTO?> GetUserById(long userId);
     Task<UserDTO?> GetUserByEmail(string email);
-    Task<UserDTO> CreateUser(UserDTO user);
+    Task<UserDTO> CreateUser(UserDTO user, string password);
     Task<UserDTO?> UpdateUser(long userId, UserDTO user);
     Task DeleteUser(long userId);
     Task<bool> IsEmailTaken(string email);

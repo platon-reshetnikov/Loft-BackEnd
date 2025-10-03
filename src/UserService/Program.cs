@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using UserService.Mappings;
+using UserService.Services;
 
 namespace UserService
 {
@@ -14,6 +15,9 @@ namespace UserService
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
             builder.Services.AddAutoMapper(typeof(UserProfile));
+
+            // Register in-memory user service
+            builder.Services.AddSingleton<IUserService, UserService.Services.UserService>();
 
             var app = builder.Build();
 

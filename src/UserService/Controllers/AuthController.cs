@@ -32,7 +32,9 @@ public class AuthController : ControllerBase
         try
         {
             var created = await _userService.CreateUser(userDto, request.PasswordHash);
-            return Created($"/api/users/{created.Id}", created);
+            // generate token
+            var token = await _userService.GenerateJwt(created);
+            return Created($"/api/users/{created.Id}", new { user = created, token });
         }
         catch (InvalidOperationException ex)
         {
@@ -50,7 +52,9 @@ public class AuthController : ControllerBase
         if (user == null)
             return Unauthorized(new { message = "Invalid credentials" });
 
-        return Ok(new { success = true, message = "Authenticated", user });
+        var token = await _userService.GenerateJwt(user);
+
+        return Ok(new { success = true, message = "Authenticated", user, token });
     }
 }
 

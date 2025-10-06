@@ -11,4 +11,6 @@ public interface IUserService
     Task DeleteUser(long userId);
     Task<bool> IsEmailTaken(string email);
     Task<UserDTO?> AuthenticateUser(string email, string password);
+    Task<string> GenerateJwt(UserDTO user);
+
 }

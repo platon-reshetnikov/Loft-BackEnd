@@ -1,48 +1,45 @@
-using System.Collections.Concurrent;
-using System.Threading;
+using System.Threading.Tasks;
 using AutoMapper;
 using Loft.Common.DTOs;
 using UserService.Entities;
+using UserService.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Loft.Common.Enums;
 
 namespace UserService.Services;
 
 public class UserService : IUserService
 {
-    private readonly ConcurrentDictionary<long, User> _users = new();
-    private readonly ConcurrentDictionary<string, long> _emailIndex = new(StringComparer.OrdinalIgnoreCase);
-    private long _lastId;
-    private readonly PasswordHasher<User> _passwordHasher = new();
+    private readonly UserDbContext _db;
     private readonly IMapper _mapper;
+    private readonly PasswordHasher<User> _passwordHasher;
+    private readonly ITokenService _tokenService;
 
-    public UserService(IMapper mapper)
+    public UserService(UserDbContext db, IMapper mapper, ITokenService tokenService)
     {
+        _db = db;
         _mapper = mapper;
+        _tokenService = tokenService;
+        _passwordHasher = new PasswordHasher<User>();
     }
 
-    public Task<UserDTO?> GetUserById(long userId)
+    public async Task<UserDTO?> GetUserById(long userId)
     {
-        if (_users.TryGetValue(userId, out var user))
-        {
-            return Task.FromResult<UserDTO?>(_mapper.Map<UserDTO>(user));
-        }
-        return Task.FromResult<UserDTO?>(null);
+        var user = await _db.Users.FindAsync(userId);
+        if (user == null) return null;
+        return _mapper.Map<UserDTO>(user);
     }
 
-    public Task<UserDTO?> GetUserByEmail(string email)
+    public async Task<UserDTO?> GetUserByEmail(string email)
     {
-        if (string.IsNullOrWhiteSpace(email))
-            return Task.FromResult<UserDTO?>(null);
-
-        if (_emailIndex.TryGetValue(email, out var id) && _users.TryGetValue(id, out var user))
-        {
-            return Task.FromResult<UserDTO?>(_mapper.Map<UserDTO>(user));
-        }
-
-        return Task.FromResult<UserDTO?>(null);
+        if (string.IsNullOrWhiteSpace(email)) return null;
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.Trim().ToLower());
+        if (user == null) return null;
+        return _mapper.Map<UserDTO>(user);
     }
 
-    public Task<UserDTO> CreateUser(UserDTO userDto, string password)
+    public async Task<UserDTO> CreateUser(UserDTO userDto, string password)
     {
         if (userDto == null) throw new ArgumentNullException(nameof(userDto));
         if (string.IsNullOrWhiteSpace(userDto.Email)) throw new ArgumentException("Email is required", nameof(userDto));
@@ -50,50 +47,35 @@ public class UserService : IUserService
 
         var email = userDto.Email.Trim();
 
-        // Try reserve email to avoid race
-        if (!_emailIndex.TryAdd(email, -1))
+        // check existing
+        if (await _db.Users.AnyAsync(u => u.Email.ToLower() == email.ToLower()))
             throw new InvalidOperationException("Email already taken");
 
-        try
+        var user = new User
         {
-            var id = Interlocked.Increment(ref _lastId);
-            var user = new User
-            {
-                Id = id,
-                Email = email,
-                FirstName = userDto.FirstName,
-                LastName = userDto.LastName,
-                AvatarUrl = userDto.AvatarUrl,
-                Phone = userDto.Phone,
-                // For self-registered users role is always CUSTOMER; selling permission is controlled by CanSell
-                Role = Loft.Common.Enums.Role.CUSTOMER,
-                CanSell = userDto.CanSell
-            };
+            Email = email,
+            FirstName = userDto.FirstName,
+            LastName = userDto.LastName,
+            AvatarUrl = userDto.AvatarUrl,
+            Phone = userDto.Phone,
+            Role = Role.CUSTOMER,
+            CanSell = userDto.CanSell
+        };
 
-            user.PasswordHash = _passwordHasher.HashPassword(user, password);
+        user.PasswordHash = _passwordHasher.HashPassword(user, password);
 
-            if (!_users.TryAdd(id, user))
-                throw new Exception("Failed to add user");
+        _db.Users.Add(user);
+        await _db.SaveChangesAsync();
 
-            // update email index with real id
-            _emailIndex[email] = id;
-
-            return Task.FromResult(_mapper.Map<UserDTO>(user));
-        }
-        catch
-        {
-            // cleanup reserved email
-            _emailIndex.TryRemove(email, out _);
-            throw;
-        }
+        return _mapper.Map<UserDTO>(user);
     }
 
-    public Task<UserDTO?> UpdateUser(long userId, UserDTO user)
+    public async Task<UserDTO?> UpdateUser(long userId, UserDTO user)
     {
         if (user == null) throw new ArgumentNullException(nameof(user));
 
-        if (!_users.TryGetValue(userId, out var existing))
-            return Task.FromResult<UserDTO?>(null);
+        var existing = await _db.Users.FindAsync(userId);
+        if (existing == null) return null;
 
         existing.FirstName = user.FirstName;
         existing.LastName = user.LastName;
@@ -101,45 +83,48 @@ public class UserService : IUserService
         existing.Phone = user.Phone;
         // Role and Email updates are omitted here; implement carefully if needed
 
-        return Task.FromResult<UserDTO?>(_mapper.Map<UserDTO>(existing));
+        await _db.SaveChangesAsync();
+        return _mapper.Map<UserDTO>(existing);
     }
 
-    public Task DeleteUser(long userId)
+    public async Task DeleteUser(long userId)
     {
-        if (_users.TryRemove(userId, out var removed))
+        var existing = await _db.Users.FindAsync(userId);
+        if (existing != null)
         {
-            if (!string.IsNullOrWhiteSpace(removed.Email))
-                _emailIndex.TryRemove(removed.Email, out _);
+            _db.Users.Remove(existing);
+            await _db.SaveChangesAsync();
         }
-        return Task.CompletedTask;
     }
 
-    public Task<bool> IsEmailTaken(string email)
+    public async Task<bool> IsEmailTaken(string email)
     {
-        if (string.IsNullOrWhiteSpace(email)) return Task.FromResult(false);
-        return Task.FromResult(_emailIndex.ContainsKey(email.Trim()));
+        if (string.IsNullOrWhiteSpace(email)) return false;
+        return await _db.Users.AnyAsync(u => u.Email.ToLower() == email.Trim().ToLower());
     }
 
-    public Task<UserDTO?> AuthenticateUser(string email, string password)
+    public async Task<UserDTO?> AuthenticateUser(string email, string password)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-            return Task.FromResult<UserDTO?>(null);
+            return null;
 
-        if (!_emailIndex.TryGetValue(email, out var id))
-            return Task.FromResult<UserDTO?>(null);
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.Trim().ToLower());
+        if (user == null) return null;
 
-        if (!_users.TryGetValue(id, out var user))
-            return Task.FromResult<UserDTO?>(null);
-
-        if (string.IsNullOrEmpty(user.PasswordHash))
-            return Task.FromResult<UserDTO?>(null);
+        if (string.IsNullOrEmpty(user.PasswordHash)) return null;
 
         var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         if (verification == PasswordVerificationResult.Success || verification == PasswordVerificationResult.SuccessRehashNeeded)
         {
-            return Task.FromResult<UserDTO?>(_mapper.Map<UserDTO>(user));
+            return _mapper.Map<UserDTO>(user);
         }
 
-        return Task.FromResult<UserDTO?>(null);
+        return null;
+    }
+
+    public Task<string> GenerateJwt(UserDTO user)
+    {
+        var token = _tokenService.GenerateToken(user);
+        return Task.FromResult(token);
     }
 }

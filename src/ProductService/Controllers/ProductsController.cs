@@ -1,4 +1,4 @@
-using AutoMapper;
+п»їusing AutoMapper;
 using Loft.Common.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Services;
@@ -16,9 +16,9 @@ namespace ProductService.Controllers
             _productService = productService;
         }
 
-        // Создание продукта
-        [HttpPost]
-        public async Task<IActionResult> CreateProduct([FromBody] ProductDTO productDto)
+        // РЎРѕР·РґР°РЅРёРµ РїСЂРѕРґСѓРєС‚Р°
+        [HttpPost("add")]
+        public async Task<IActionResult> addProduct([FromBody] ProductDTO productDto)
         {
             if (productDto == null)
                 return BadRequest("Product data is null");
@@ -27,7 +27,7 @@ namespace ProductService.Controllers
             return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, createdProduct);
         }
 
-        // Получение продукта по Id
+        // РџРѕР»СѓС‡РµРЅРёРµ РїСЂРѕРґСѓРєС‚Р° РїРѕ Id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(long id)
         {
@@ -38,16 +38,35 @@ namespace ProductService.Controllers
             return Ok(product);
         }
 
-        // Получение всех продуктов
-        [HttpGet]
-        public async Task<IActionResult> GetAllProducts([FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-            [FromQuery] long? categoryId = null, [FromQuery] long? sellerId = null)
+        [HttpGet("approved-count")] // РџРѕР»СѓС‡РµРЅРёРµ РєРѕР»РёС‡РµСЃС‚РІР° РѕРґРѕР±СЂРµРЅРЅС‹С… РїСЂРѕРґСѓРєС‚РѕРІ
+        public async Task<ActionResult<int>> GetApprovedProductsCount()
         {
-            var products = await _productService.GetAllProducts(page, pageSize, categoryId, sellerId);
+            var count = await _productService.GetApprovedProductsCount();
+            return Ok(count);
+        }
+
+        // РџРѕР»СѓС‡РµРЅРёРµ РІСЃРµС… РїСЂРѕРґСѓРєС‚РѕРІ
+        [HttpGet("All")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> GetAllProducts(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
+        {
+            var products = await _productService.GetAllProducts(page, pageSize);
             return Ok(products);
         }
 
-        // Обновление продукта
+        // рџ”Ќ РџРѕРёСЃРє РїСЂРѕРґСѓРєС‚РѕРІ
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<ProductDTO>>> SearchProducts(
+            [FromQuery] string? text,
+            [FromQuery] decimal? minPrice,
+            [FromQuery] decimal? maxPrice)
+        {
+            var products = await _productService.SearchProducts(text, minPrice, maxPrice);
+            return Ok(products);
+        }
+
+        // РћР±РЅРѕРІР»РµРЅРёРµ РїСЂРѕРґСѓРєС‚Р°
         [HttpPut("{id:long}")]
         public async Task<IActionResult> UpdateProduct(long id, [FromBody] ProductDTO productDto)
         {
@@ -61,7 +80,7 @@ namespace ProductService.Controllers
             return Ok(updatedProduct);
         }
 
-        // Удаление продукта
+        // РЈРґР°Р»РµРЅРёРµ РїСЂРѕРґСѓРєС‚Р°
         [HttpDelete("{id:long}")]
         public async Task<IActionResult> DeleteProduct(long id)
         {
@@ -69,23 +88,20 @@ namespace ProductService.Controllers
             return NoContent();
         }
 
-        // Поиск по названию и описанию
-        [HttpGet("search")]
-        public async Task<IActionResult> SearchProducts(
-            [FromQuery] string query,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 20)
-        {
-            var products = await _productService.SearchProducts(query, page, pageSize);
-            return Ok(products);
-        }
-
-        // Обновление количества товара
+        // РћР±РЅРѕРІР»РµРЅРёРµ РєРѕР»РёС‡РµСЃС‚РІР° С‚РѕРІР°СЂР°
         [HttpPatch("{id:long}/stock")]
         public async Task<IActionResult> UpdateStock(long id, [FromQuery] int quantity)
         {
             await _productService.UpdateStock(id, quantity);
             return NoContent();
+        }
+
+        // Р”РѕР±Р°РІР»РµРЅРёРµ РєРѕРјРјРµРЅС‚Р°СЂРёСЏ Рє РїСЂРѕРґСѓРєС‚Сѓ
+        [HttpPost("AddComent")]
+        public async Task<IActionResult> AddComent(long id, [FromQuery] string txt)
+        {
+            await _productService.AddComent(id, txt);
+            return Ok();
         }
     }
 }

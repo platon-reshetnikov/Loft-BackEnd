@@ -1,6 +1,7 @@
-using AutoMapper;
+п»їusing AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Loft.Common.DTOs;
+using Loft.Common.Enums;
 using Microsoft.EntityFrameworkCore;
 using ProductService.Data;
 using ProductService.Entities;
@@ -13,25 +14,52 @@ public class ProductService : IProductService
     private readonly ProductDbContext _context;
     private readonly IMapper _mapper;
 
+
     public ProductService(ProductDbContext context, IMapper mapper)
     {
         _context = context;
         _mapper = mapper;
     }
 
-    // Получение всех продуктов с пагинацией и фильтрацией
-    public async Task<IEnumerable<ProductDTO>> GetAllProducts(int page = 1, int pageSize = 20,
-        long? categoryId = null, long? sellerId = null)
+    public async Task AddComent(long productId, string newComent)
     {
-        var query = _context.Products.AsQueryable();
+        var product = await _context.Products.FindAsync(productId);
+        if (product != null)
+        {
+            _context.CommentProduct.Add(new CommentProduct
+            {
+                Text = newComent,
+                ProductId = productId,
+                CreatedAt = DateTime.UtcNow,
+                Status = ModerationStatus.Pending // РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РЅР° РјРѕРґРµСЂР°С†РёСЋ
+            });
 
-        if (categoryId.HasValue)
-            query = query.Where(p => p.CategoryId == categoryId.Value);
+            await _context.SaveChangesAsync();
+        }
+    }
 
-        if (sellerId.HasValue)
-            query = query.Where(p => p.SellerId == sellerId.Value);
+    // РџРѕР»СѓС‡РµРЅРёРµ РєРѕР»РёС‡РµСЃС‚РІР° РѕРґРѕР±СЂРµРЅРЅС‹С… РїСЂРѕРґСѓРєС‚РѕРІ
+    public async Task<int> GetApprovedProductsCount()
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .CountAsync(p => p.Status == ModerationStatus.Approved);
+    }
 
-        return await query
+
+    // РџРѕР»СѓС‡РµРЅРёРµ РїСЂРѕРґСѓРєС‚РѕРІ СЃ РїР°РіРёРЅР°С†РёРµР№ РѕРґРѕР±СЂРµРЅРЅС‹С… РјРѕРґРµСЂР°С†РёРµР№
+    public async Task<IEnumerable<ProductDTO>> GetAllProducts(int page = 1, int pageSize = 20)
+    {
+        if (page < 1)
+            throw new ArgumentException("Page number must be greater than or equal to 1", nameof(page));
+        if (pageSize < 1)
+            throw new ArgumentException("Page size must be greater than or equal to 1", nameof(pageSize));
+
+        return await _context.Products
+            .AsNoTracking()
+            .Where(p => p.Status == ModerationStatus.Approved)
+            .Include(p => p.Image)
+            .Include(p => p.Comments)
             .OrderByDescending(p => p.DateAdded)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -39,19 +67,19 @@ public class ProductService : IProductService
             .ToListAsync();
     }
 
-    // Получение продукта по Id
+    // РџРѕР»СѓС‡РµРЅРёРµ РїСЂРѕРґСѓРєС‚Р° РїРѕ Id
     public async Task<ProductDTO?> GetProductById(long productId)
     {
         var product = await _context.Products.FindAsync(productId);
         return product == null ? null : _mapper.Map<ProductDTO>(product);
     }
 
-    // Создание нового продукта
+    // РЎРѕР·РґР°РЅРёРµ РЅРѕРІРѕРіРѕ РїСЂРѕРґСѓРєС‚Р°
     public async Task<ProductDTO> CreateProduct(ProductDTO productDto)
     {
         var product = _mapper.Map<Product>(productDto);
         product.DateAdded = DateTime.UtcNow;
-        product.Status = "Pending"; // по умолчанию на модерацию
+        //product.Status = ModerationStatus.Pending; // РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РЅР° РјРѕРґРµСЂР°С†РёСЋ
 
         _context.Products.Add(product);
         await _context.SaveChangesAsync();
@@ -59,7 +87,7 @@ public class ProductService : IProductService
         return _mapper.Map<ProductDTO>(product);
     }
 
-    // Обновление продукта
+    // РћР±РЅРѕРІР»РµРЅРёРµ РїСЂРѕРґСѓРєС‚Р°
     public async Task<ProductDTO?> UpdateProduct(long productId, ProductDTO productDto)
     {
         var product = await _context.Products.FindAsync(productId);
@@ -72,7 +100,7 @@ public class ProductService : IProductService
         return _mapper.Map<ProductDTO>(product);
     }
 
-    // Удаление продукта
+    // РЈРґР°Р»РµРЅРёРµ РїСЂРѕРґСѓРєС‚Р°
     public async Task DeleteProduct(long productId)
     {
         var product = await _context.Products.FindAsync(productId);
@@ -83,7 +111,7 @@ public class ProductService : IProductService
         }
     }
 
-    // Поиск по названию / описанию
+    // РџРѕРёСЃРє РїРѕ РЅР°Р·РІР°РЅРёСЋ / РѕРїРёСЃР°РЅРёСЋ
     public async Task<IEnumerable<ProductDTO>> SearchProducts(string query, int page = 1, int pageSize = 20)
     {
         return await _context.Products
@@ -95,7 +123,7 @@ public class ProductService : IProductService
             .ToListAsync();
     }
 
-    // Обновление количества товара на складе
+    // РћР±РЅРѕРІР»РµРЅРёРµ РєРѕР»РёС‡РµСЃС‚РІР° С‚РѕРІР°СЂР° РЅР° СЃРєР»Р°РґРµ
     public async Task UpdateStock(long productId, int newQuantity)
     {
         var product = await _context.Products.FindAsync(productId);
@@ -105,5 +133,36 @@ public class ProductService : IProductService
             product.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
         }
+    }
+
+    public async Task<IEnumerable<ProductDTO>> SearchProducts(string? text, decimal? minPrice, decimal? maxPrice)
+    {
+        var query = _context.Products.AsNoTracking().AsQueryable();
+
+        // РўРѕР»СЊРєРѕ РѕРґРѕР±СЂРµРЅРЅС‹Рµ С‚РѕРІР°СЂС‹
+        query = query.Where(p => p.Status == ModerationStatus.Approved);
+
+        // РџРѕРёСЃРє РїРѕ РЅР°Р·РІР°РЅРёСЋ Рё РѕРїРёСЃР°РЅРёСЋ
+        if (!string.IsNullOrWhiteSpace(text))
+        {
+            string lowerText = text.ToLower();
+            query = query.Where(p =>
+                p.Name.ToLower().Contains(lowerText) ||
+                (p.Description != null && p.Description.ToLower().Contains(lowerText)));
+        }
+
+        // Р¤РёР»СЊС‚СЂР°С†РёСЏ РїРѕ С†РµРЅРµ
+        if (minPrice.HasValue)
+            query = query.Where(p => p.Price >= minPrice.Value);
+
+        if (maxPrice.HasValue)
+            query = query.Where(p => p.Price <= maxPrice.Value);
+
+        // РџРѕР»СѓС‡Р°РµРј СЂРµР·СѓР»СЊС‚Р°С‚ Рё РјР°РїРёРј РІ DTO
+        var products = await query
+            .OrderByDescending(p => p.DateAdded)
+            .ToListAsync();
+
+        return _mapper.Map<IEnumerable<ProductDTO>>(products);
     }
 }

@@ -8,7 +8,7 @@ public interface IOrderService
     Task<OrderDTO> CreateOrder(OrderDTO order,IEnumerable<OrderItemDTO> items);
     Task<OrderDTO?> GetOrderById(long orderId);
     Task<IEnumerable<OrderDTO>> GetOrdersByCustomerId(long customerId, int page = 1, int pageSize = 20);
-    Task UpdateOrderStatus(long orderId, OrderStatus status);
+    Task UpdateOrderStatus(long orderId, ModerationStatus status);
     Task CancelOrder(long orderId);
     Task AddOrderItems(long orderId, OrderItemDTO items);
     Task RemoveOrderItems(long orderId, long orderItemId);

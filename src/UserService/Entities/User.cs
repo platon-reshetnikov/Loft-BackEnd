@@ -12,7 +12,7 @@ public class User
     
     [Required]
     [MinLength(6)]
-    public string PasswordHash { get; set; } = string.Empty;
+    public string PasswordHash { get; set;} = string.Empty;
     public Role Role { get; set; }
     public bool CanSell { get; set; } = false;
     public string? AvatarUrl { get; set; }

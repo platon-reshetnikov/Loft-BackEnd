@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Loft.Common.DTOs;
 using UserService.Services;
-using System.ComponentModel.DataAnnotations;
 using UserService.Entities;
+using UserService.DTOs;
 
 namespace UserService.Controllers;
 
@@ -18,7 +18,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] User request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
@@ -27,11 +27,11 @@ public class AuthController : ControllerBase
             return BadRequest(new { message = "Email already taken" });
 
         // For self-registration: role is always CUSTOMER; selling ability is controlled by CanSell flag
-        var userDto = new UserDTO(0, string.Empty, request.Email, Loft.Common.Enums.Role.CUSTOMER.ToString(), request.AvatarUrl ?? string.Empty, request.FirstName ?? string.Empty, request.LastName ?? string.Empty, request.Phone ?? string.Empty, request.CanSell);
+        var userDto = new UserDTO(0, request.Name ?? string.Empty, request.Email, Loft.Common.Enums.Role.CUSTOMER.ToString(), string.Empty, string.Empty, string.Empty, string.Empty, false);
 
         try
         {
-            var created = await _userService.CreateUser(userDto, request.PasswordHash);
+            var created = await _userService.CreateUser(userDto, request.Password);
             // generate token
             var token = await _userService.GenerateJwt(created);
             return Created($"/api/users/{created.Id}", new { user = created, token });
@@ -43,12 +43,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] User request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var user = await _userService.AuthenticateUser(request.Email, request.PasswordHash);
+        var user = await _userService.AuthenticateUser(request.Email, request.Password);
         if (user == null)
             return Unauthorized(new { message = "Invalid credentials" });
 
@@ -57,4 +57,3 @@ public class AuthController : ControllerBase
         return Ok(new { success = true, message = "Authenticated", user, token });
     }
 }
-

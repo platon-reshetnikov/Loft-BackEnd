@@ -8,7 +8,7 @@ namespace UserService.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class AuthController : ControllerBase
+public class AuthController : ControllerBase 
 {
     private readonly IUserService _userService;
 

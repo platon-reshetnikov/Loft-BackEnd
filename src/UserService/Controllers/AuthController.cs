@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Loft.Common.DTOs;
 using UserService.Services;
-using UserService.Entities;
 using UserService.DTOs;
 
 namespace UserService.Controllers;

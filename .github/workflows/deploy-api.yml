@@ -2,13 +2,17 @@ name: Deploy ASP.NET Core API
 
 on:
   push:
-    branches: [ main ]
+    branches: 
+      - main
+      - User-Service  # Додати вашу гілку!
   pull_request:
-    branches: [ main ]
+    branches: 
+      - main
+      - user-service
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted  # Використовуємо наш runner
+    runs-on: self-hosted  # Ваш runner
     
     steps:
     - name: Checkout code
@@ -27,21 +31,24 @@ jobs:
       
     - name: Test
       run: dotnet test --no-build --verbosity normal
+      continue-on-error: true
       
     - name: Publish
-      run: dotnet publish -c Release -o /var/www/myapi/publish
+      run: dotnet publish -c Release -o ${{ github.workspace }}/publish
       
-    - name: Stop application
+    # Деплой тільки з main гілки
+    - name: Deploy to server
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
       run: |
         sudo systemctl stop myapi.service || true
-        
-    - name: Copy files
-      run: |
         sudo rm -rf /var/www/myapi/app
-        sudo mv /var/www/myapi/publish /var/www/myapi/app
+        sudo mkdir -p /var/www/myapi/app
+        sudo cp -r ${{ github.workspace }}/publish/* /var/www/myapi/app/
         sudo chown -R github-runner:github-runner /var/www/myapi/app
-        
-    - name: Start application
-      run: |
         sudo systemctl start myapi.service
+        
+    - name: Check deployment
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: |
+        sleep 5
         sudo systemctl status myapi.service

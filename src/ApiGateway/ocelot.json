@@ -7,7 +7,16 @@
         { "Host": "userservice", "Port": 8080 }
       ],
       "UpstreamPathTemplate": "/api/users",
-      "UpstreamHttpMethod": [ "Get" ]
+      "UpstreamHttpMethod": [ "Get", "Post", "Put", "Delete", "Options" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/users/{userId}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        { "Host": "userservice", "Port": 8080 }
+      ],
+      "UpstreamPathTemplate": "/api/users/{userId}",
+      "UpstreamHttpMethod": [ "Get", "Put", "Delete", "Options" ]
     },
     {
       "DownstreamPathTemplate": "/api/sellers",

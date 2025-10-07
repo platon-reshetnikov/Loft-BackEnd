@@ -25,4 +25,11 @@
       </Content>
     </ItemGroup>
 
+    <!-- Ensure ocelot.json is copied to output so Ocelot can read it at runtime inside the container -->
+    <ItemGroup>
+      <None Include="ocelot.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

@@ -5,6 +5,9 @@ using Microsoft.OpenApi.Models;
 using UserService.Data;
 using UserService.Mappings;
 using UserService.Services;
+using Microsoft.EntityFrameworkCore;
+//using UserService.Swagger;
+using System.IO;
 
 namespace UserService
 {
@@ -17,6 +20,16 @@ namespace UserService
             // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
             builder.Services.AddAutoMapper(typeof(UserProfile));
+
+            // Configure DbContext (SQLite) - use connection string or default file
+            var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=users.db";
+            builder.Services.AddDbContext<UserDbContext>(options => options.UseSqlite(defaultConn));
+
+            // Add CORS policy for frontend development
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            });
 
             // Добавляем TokenService и UserService
             builder.Services.AddScoped<ITokenService, TokenService>();
@@ -71,6 +84,9 @@ namespace UserService
                 {
                     { securityScheme, new string[] { } }
                 });
+
+                // Support file uploads in Swagger for endpoints with IFormFile
+                //c.OperationFilter<FileUploadOperationFilter>();
             });
 
             var app = builder.Build();
@@ -89,11 +105,25 @@ namespace UserService
                 catch { }
             }
 
+            // Ensure wwwroot exists so static files (avatars) can be served
+            try
+            {
+                var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+                if (!Directory.Exists(wwwrootPath)) Directory.CreateDirectory(wwwrootPath);
+            }
+            catch { }
+
             // Настраиваем конвейер обработки запросов
             app.UseRouting();
 
+            // Enable CORS for frontend apps (dev convenience) - after UseRouting and before auth
+            app.UseCors("AllowAll");
+
             app.UseSwagger();
             app.UseSwaggerUI();
+
+            // Serve static files (wwwroot) so avatars can be retrieved
+            app.UseStaticFiles();
 
             app.UseAuthentication();
             app.UseAuthorization();

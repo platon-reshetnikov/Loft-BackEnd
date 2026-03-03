@@ -21,7 +21,6 @@ public class UserDbContext : DbContext
         {
             b.HasKey(u => u.Id);
             
-            // Добавляем автоинкремент для PostgreSQL
             b.Property(u => u.Id)
                 .UseIdentityColumn();
             
@@ -29,7 +28,6 @@ public class UserDbContext : DbContext
             b.HasIndex(u => u.Email).IsUnique();
             b.Property(u => u.PasswordHash).IsRequired();
 
-            // массив избранных товаров
             b.Property(u => u.FavoriteProductIds)
              .HasColumnType("integer[]")
              .HasDefaultValue(Array.Empty<int>());
@@ -44,7 +42,6 @@ public class UserDbContext : DbContext
              .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // Конфигурация для ChatMessage
         modelBuilder.Entity<ChatMessage>(b =>
         {
             b.HasKey(m => m.Id);

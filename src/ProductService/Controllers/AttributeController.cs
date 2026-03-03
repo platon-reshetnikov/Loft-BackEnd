@@ -1,8 +1,4 @@
-﻿using System.Threading.Tasks;
-using Loft.Common.DTOs;
-using Loft.Common.Enums;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Entities;
 using ProductService.Services;
@@ -20,7 +16,6 @@ namespace ProductService.Controllers
             _service = service;
         }
 
-        // Получение списка атрибутов
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -28,7 +23,6 @@ namespace ProductService.Controllers
             return Ok(attributes);
         }
 
-        // Получение атрибута по ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -37,9 +31,8 @@ namespace ProductService.Controllers
             return Ok(attribute);
         }
 
-        // Создание атрибута
         [HttpPost]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Create([FromBody] AttributeDto attributeDto)
         {
             var userId = GetUserId();
@@ -51,9 +44,8 @@ namespace ProductService.Controllers
             return CreatedAtAction(nameof(GetById), new { id = attribute.Id }, attribute);
         }
 
-        // Обновление атрибута
         [HttpPut("{id}")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Update(int id, [FromBody] AttributeDto attributeDto)
         {
             var userId = GetUserId();
@@ -66,9 +58,8 @@ namespace ProductService.Controllers
             return Ok(updated);
         }
 
-        // Удаление атрибута
         [HttpDelete("{id}")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             var userId = GetUserId();

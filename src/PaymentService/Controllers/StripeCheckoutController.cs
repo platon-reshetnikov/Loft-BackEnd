@@ -17,12 +17,7 @@ public class StripeCheckoutController : ControllerBase
         _checkoutService = checkoutService;
         _logger = logger;
     }
-
-    /// <summary>
-    /// Создать Stripe Checkout Session для оплаты заказа
-    /// </summary>
-    /// <param name="request">Данные для создания сессии</param>
-    /// <returns>ID сессии и URL для редиректа</returns>
+    
     [HttpPost("create-checkout-session")]
     public async Task<IActionResult> CreateCheckoutSession([FromBody] CreateCheckoutSessionRequest request)
     {
@@ -35,14 +30,12 @@ public class StripeCheckoutController : ControllerBase
                 request.CancelUrl
             );
 
-            // Получаем полную информацию о сессии, включая URL
             var session = await _checkoutService.GetCheckoutSessionAsync(sessionId);
 
             return Ok(new
             {
                 sessionId = sessionId,
-                url = session.Url, // URL для редиректа на Stripe Checkout
-                // Publishable key нужен фронтенду для инициализации Stripe.js
+                url = session.Url,
                 publishableKey = Request.HttpContext.RequestServices
                     .GetRequiredService<IConfiguration>()["Stripe:PublishableKey"]
             });
@@ -53,10 +46,7 @@ public class StripeCheckoutController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
-    /// <summary>
-    /// Получить информацию о Checkout Session
-    /// </summary>
+    
     [HttpGet("session/{sessionId}")]
     public async Task<IActionResult> GetSession(string sessionId)
     {
@@ -80,10 +70,7 @@ public class StripeCheckoutController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
-    /// <summary>
-    /// Webhook endpoint для обработки событий от Stripe
-    /// </summary>
+    
     [HttpPost("webhook")]
     public async Task<IActionResult> HandleWebhook()
     {
@@ -111,29 +98,10 @@ public class StripeCheckoutController : ControllerBase
     }
 }
 
-/// <summary>
-/// Запрос на создание Checkout Session
-/// </summary>
 public class CreateCheckoutSessionRequest
 {
-    /// <summary>
-    /// ID заказа
-    /// </summary>
     public long OrderId { get; set; }
-    
-    /// <summary>
-    /// Сумма платежа
-    /// </summary>
     public decimal Amount { get; set; }
-    
-    /// <summary>
-    /// URL для редиректа после успешной оплаты
-    /// </summary>
     public string SuccessUrl { get; set; } = "";
-    
-    /// <summary>
-    /// URL для редиректа при отмене оплаты
-    /// </summary>
     public string CancelUrl { get; set; } = "";
 }
-

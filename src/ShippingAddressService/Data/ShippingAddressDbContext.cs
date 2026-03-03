@@ -18,11 +18,7 @@ public class ShippingAddressDbContext : DbContext
         modelBuilder.Entity<ShippingAddress>(entity =>
         {
             entity.HasKey(e => e.Id);
-            
-            // Индекс для быстрого поиска по CustomerId
             entity.HasIndex(e => e.CustomerId);
-            
-            // Индекс для быстрого поиска дефолтного адреса
             entity.HasIndex(e => new { e.CustomerId, e.IsDefault });
             
             entity.Property(e => e.Address)
@@ -50,7 +46,6 @@ public class ShippingAddressDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP");
             
-            // Игнорируем навигационное свойство Customer (внешняя сущность)
             entity.Ignore(e => e.Customer);
         });
     }

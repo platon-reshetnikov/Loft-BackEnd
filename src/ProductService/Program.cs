@@ -1,7 +1,4 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using ProductService.Data;
 using ProductService.Mappings;
@@ -9,8 +6,6 @@ using ProductService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Threading.Tasks;
-using System;
 using System.Security.Claims;
 
 namespace ProductService
@@ -26,38 +21,29 @@ namespace ProductService
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
 
-            // Строка подключения
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-            // DbContext
             builder.Services.AddDbContext<ProductDbContext>(options =>
                 options.UseNpgsql(connectionString, npgsqlOptions =>
                 {
                     npgsqlOptions.MigrationsAssembly(typeof(Program).Assembly.FullName);
                 }));
 
-            // Контроллеры и AutoMapper
             builder.Services.AddControllers();
             builder.Services.AddAutoMapper(typeof(ProductProfile));
 
-            // Сервисы
             builder.Services.AddScoped<IProductService, ProductService.Services.ProductService>();
 
-            // HttpClient для связи с UserService
             builder.Services.AddHttpClient("UserService", client =>
             {
                 var userServiceUrl = builder.Configuration["Services:UserService"] ?? "http://localhost:5003";
                 client.BaseAddress = new Uri(userServiceUrl);
             });
-            // Настройка аутентификации JWT
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtKey = jwtSection.GetValue<string>("Key");
             var jwtIssuer = jwtSection.GetValue<string>("Issuer");
             var jwtAudience = jwtSection.GetValue<string>("Audience");
-
-            //Console.WriteLine($"[ProductService] JWT Configuration - Key: {(!string.IsNullOrEmpty(jwtKey) ? "SET" : "NOT SET")}, Issuer: {jwtIssuer}, Audience: {jwtAudience}");
-            //Console.WriteLine($"[DEBUG] JWT Key length: {jwtKey?.Length ?? 0}, First 5 chars: {jwtKey?.Substring(0, Math.Min(5, jwtKey.Length))}");
-
+            
             if (string.IsNullOrEmpty(jwtKey))
             {
                 throw new Exception("[ProductService] JWT Key is not configured!");
@@ -89,7 +75,6 @@ namespace ProductService
                     RequireSignedTokens = true
                 };
 
-                // Для отладки
                 options.Events = new JwtBearerEvents
                 {
                     OnMessageReceived = context =>
@@ -117,7 +102,6 @@ namespace ProductService
                 };
             });
 
-            // Swagger
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
@@ -148,31 +132,25 @@ namespace ProductService
                     }
                 });
 
-                // Только контроллеры из текущей сборки
                 c.DocInclusionPredicate((docName, apiDesc) =>
                 {
                     var cad = apiDesc.ActionDescriptor as Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
                     return cad != null && cad.ControllerTypeInfo.Assembly == typeof(Program).Assembly;
                 });
 
-                // IFormFile для Swagger
                 c.MapType<Microsoft.AspNetCore.Http.IFormFile>(() =>
                     new OpenApiSchema { Type = "string", Format = "binary" });
             });
 
             var app = builder.Build();
 
-            // Конвейер запросов
             app.UseRouting();
 
-            // Swagger UI доступен всегда
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            // JWT
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.MapControllers();
 
             app.Run();

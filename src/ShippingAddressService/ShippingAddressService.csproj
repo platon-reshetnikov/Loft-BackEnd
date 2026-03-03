@@ -34,12 +34,9 @@
         <ProjectReference Include="..\Common\Loft.Common\Loft.Common.csproj" />
         <ProjectReference Include="..\UserService\UserService.csproj" />
     </ItemGroup>
-
-    <!-- Не публиковать appsettings из этого проекта -->
     <ItemGroup>
         <Content Update="appsettings*.json">
             <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
     </ItemGroup>
-
 </Project>

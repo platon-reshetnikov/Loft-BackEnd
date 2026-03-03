@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using UserService.Entities;
 
 namespace ProductService.Controllers
 {
@@ -10,12 +9,11 @@ namespace ProductService.Controllers
     {
         protected long? GetUserId()
         {
-            // Попробуем несколько общих типов соответственно возможным картам claim-ов:
             var tryTypes = new[]
             {
-            ClaimTypes.NameIdentifier, // "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-            "nameid",                  // иногда сокращённое имя
-            JwtRegisteredClaimNames.Sub, // "sub"
+            ClaimTypes.NameIdentifier,
+            "nameid",
+            JwtRegisteredClaimNames.Sub,
             "id",
             "user_id",
             ClaimTypes.Name,
@@ -28,7 +26,6 @@ namespace ProductService.Controllers
                 if (!string.IsNullOrEmpty(claim) && long.TryParse(claim, out var id)) return id;
             }
 
-            // Резервный метод: найти любой числовой claim в токене
             foreach (var c in User.Claims)
             {
                 if (!string.IsNullOrEmpty(c.Value) && long.TryParse(c.Value, out var id)) return id;

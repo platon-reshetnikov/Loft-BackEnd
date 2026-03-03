@@ -1,5 +1,4 @@
-namespace Loft.Common.DTOs;
-
+namespace Loft.Common.DTOs; 
 public record DeleteResponseDTO
 {
     public bool Success { get; set; }
@@ -13,4 +12,3 @@ public record DeleteResponseDTO
         Message = message;
     }
 }
-

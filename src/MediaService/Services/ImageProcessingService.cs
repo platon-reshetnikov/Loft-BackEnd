@@ -1,8 +1,5 @@
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Formats;
-using SixLabors.ImageSharp.Formats.Jpeg;
-using SixLabors.ImageSharp.Formats.Png;
 
 namespace MediaService.Services
 {
@@ -33,7 +30,6 @@ namespace MediaService.Services
 
                 using var image = await Image.LoadAsync(filePath);
                 
-                // Создаем миниатюру с сохранением пропорций
                 image.Mutate(x => x.Resize(new ResizeOptions
                 {
                     Size = new Size(width, height),
@@ -79,4 +75,3 @@ namespace MediaService.Services
         }
     }
 }
-

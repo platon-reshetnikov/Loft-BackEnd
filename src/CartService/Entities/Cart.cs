@@ -1,6 +1,4 @@
-using System;
 using UserService.Entities;
-using System.Collections.Generic;
 
 namespace CartService.Entities;
 

@@ -1,12 +1,9 @@
 ﻿using Loft.Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using UserService.Services;
-
 
 [ApiController]
 [Route("api/chat")]
@@ -20,7 +17,6 @@ public class ChatController : ControllerBase
         _chatService = chatService;
     }
 
-    // Отправить сообщение другому пользователю
     [HttpPost("send")]
     public async Task<ActionResult<ChatMessageDTO>> SendMessage([FromBody] SendMessageRequest request)
     {
@@ -29,7 +25,6 @@ public class ChatController : ControllerBase
         return Ok(message);
     }
 
-    // Получить переписку с другим пользователем
     [HttpGet("conversation/{otherUserId}")]
     public async Task<ActionResult<List<ChatMessageDTO>>> GetConversation(long otherUserId)
     {
@@ -38,7 +33,6 @@ public class ChatController : ControllerBase
         return Ok(messages);
     }
 
-    // Пометить сообщения от другого пользователя как прочитанные
     [HttpPost("mark-read/{otherUserId}")]
     public async Task<IActionResult> MarkRead(long otherUserId)
     {
@@ -47,7 +41,6 @@ public class ChatController : ControllerBase
         return Ok();
     }
 
-    // Получить список чатов текущего пользователя
     [HttpGet("my-chats")]
     public async Task<ActionResult<List<ChatDTO>>> GetMyChats()
     {
@@ -61,7 +54,6 @@ public class ChatController : ControllerBase
     {
         long userId = GetCurrentUserId() ?? throw new UnauthorizedAccessException("User ID not found in token.");
 
-        // Проверяем, принадлежит ли чат текущему пользователю
         var chat = await _chatService.GetChatById(chatId);
         if (chat == null) return NotFound("Chat not found");
         if (chat.User1Id != userId && chat.User2Id != userId)
@@ -73,12 +65,11 @@ public class ChatController : ControllerBase
 
     protected long? GetCurrentUserId()
     {
-        // Попробуем несколько общих типов соответственно возможным картам claim-ов:
         var tryTypes = new[]
         {
-            ClaimTypes.NameIdentifier, // "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-            "nameid",                  // иногда сокращённое имя
-            JwtRegisteredClaimNames.Sub, // "sub"
+            ClaimTypes.NameIdentifier, 
+            "nameid", 
+            JwtRegisteredClaimNames.Sub,
             "id",
             "user_id",
             ClaimTypes.Name,
@@ -90,13 +81,10 @@ public class ChatController : ControllerBase
             var claim = User.FindFirst(t)?.Value;
             if (!string.IsNullOrEmpty(claim) && long.TryParse(claim, out var id)) return id;
         }
-
-        // Резервный метод: найти любой числовой claim в токене
         foreach (var c in User.Claims)
         {
             if (!string.IsNullOrEmpty(c.Value) && long.TryParse(c.Value, out var id)) return id;
         }
-
         return null;
     }
 }

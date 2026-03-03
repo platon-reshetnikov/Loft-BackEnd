@@ -43,8 +43,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Common\Loft.Common\Loft.Common.csproj" />
     </ItemGroup>
-
-    <!-- Не публиковать appsettings из этого проекта, чтобы избежать конфликтов при publish проектов, которые ссылаются на UserService -->
     <ItemGroup>
         <Content Update="appsettings*.json">
             <CopyToPublishDirectory>Never</CopyToPublishDirectory>
@@ -53,5 +51,4 @@
     <ItemGroup>
         <Folder Include="Migrations\" />
     </ItemGroup>
-
 </Project>

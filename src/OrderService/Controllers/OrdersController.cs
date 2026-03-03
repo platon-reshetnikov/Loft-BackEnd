@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Loft.Common.DTOs;
 using Loft.Common.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -30,7 +27,7 @@ namespace OrderService.Controllers
                 OrderDate = DateTime.UtcNow,
                 Status = OrderStatus.PENDING,
                 TotalAmount = 0,
-                ShippingAddress = null, // или новый ShippingAddressDTO, если есть данные
+                ShippingAddress = null,
                 OrderItems = new List<OrderItemDTO>()
             };
 
@@ -110,7 +107,6 @@ namespace OrderService.Controllers
                     return BadRequest("Не удалось создать заказ");
                 }
 
-                // Получаем доступные методы оплаты от PaymentService
                 IEnumerable<string> paymentMethods = Array.Empty<string>();
                 try
                 {
@@ -124,7 +120,7 @@ namespace OrderService.Controllers
                 }
                 catch
                 {
-                    // Если не удалось получить методы — вернём пустой список, фронтенд должен обработать
+                    
                 }
 
                 return CreatedAtAction(nameof(GetOrderById), new { id = order.Id }, new { Order = order, PaymentMethods = paymentMethods });

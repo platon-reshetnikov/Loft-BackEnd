@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using PaymentService.Services;
 using Loft.Common.DTOs;
 using Loft.Common.Enums;
-//
+
 namespace PaymentService.Controllers;
 
 [ApiController]
@@ -17,10 +17,7 @@ public class PaymentsController : ControllerBase
         _paymentService = paymentService;
         _logger = logger;
     }
-
-    /// <summary>
-    /// Создать новый платеж
-    /// </summary>
+    
     [HttpPost]
     public async Task<IActionResult> CreatePayment([FromBody] CreatePaymentDTO dto)
     {
@@ -39,10 +36,7 @@ public class PaymentsController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
-    /// <summary>
-    /// Подтвердить платеж
-    /// </summary>
+    
     [HttpPost("{id}/confirm")]
     public async Task<IActionResult> ConfirmPayment(long id)
     {
@@ -65,10 +59,7 @@ public class PaymentsController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
-    /// <summary>
-    /// Получить платеж по ID
-    /// </summary>
+    
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPaymentById(long id)
     {
@@ -87,10 +78,7 @@ public class PaymentsController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
-    /// <summary>
-    /// Получить все платежи по заказу
-    /// </summary>
+    
     [HttpGet("order/{orderId}")]
     public async Task<IActionResult> GetPaymentsByOrder(long orderId)
     {
@@ -105,10 +93,7 @@ public class PaymentsController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
-    /// <summary>
-    /// Сделать возврат платежа
-    /// </summary>
+    
     [HttpPost("{id}/refund")]
     public async Task<IActionResult> RefundPayment(long id)
     {
@@ -131,10 +116,7 @@ public class PaymentsController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-
-    /// <summary>
-    /// Получить доступные методы оплаты
-    /// </summary>
+    
     [HttpGet("methods")]
     public IActionResult GetPaymentMethods()
     {

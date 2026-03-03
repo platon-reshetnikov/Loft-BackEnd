@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 using AutoMapper;
 using Loft.Common.DTOs;
 using Loft.Common.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using OrderService.Data;
 using OrderService.Entities;
 
@@ -37,10 +30,6 @@ public class OrderService : IOrderService
     public async Task<OrderDTO> CreateOrderWithShipping(OrderDTO orderDto, IEnumerable<OrderItemDTO> items, long? shippingAddressId = null, ShippingAddressDTO? customShippingAddress = null)
     {
         var itemsList = items.ToList();
-        
-        // =============================================================================
-        // НОВАЯ СИСТЕМА: Загружаем информацию о товарах для сохранения в заказе
-        // =============================================================================
         var enrichedItems = new List<OrderItem>();
         var productClient = _httpClientFactory.CreateClient("ProductService");
         
@@ -58,7 +47,6 @@ public class OrderService : IOrderService
                 ProductType = itemDto.ProductType
             };
             
-            // Если данные товара не переданы - загружаем из ProductService
             if (string.IsNullOrEmpty(orderItem.ProductName) || orderItem.Price == 0)
             {
                 _logger.LogInformation($"Enriching order item for product {itemDto.ProductId}...");
@@ -78,7 +66,6 @@ public class OrderService : IOrderService
                             orderItem.ImageUrl = product.MediaFiles?.FirstOrDefault()?.Url;
                             orderItem.CategoryId = product.CategoryId;
                             
-                            // Загружаем категорию
                             if (product.CategoryId > 0)
                             {
                                 try
@@ -110,7 +97,6 @@ public class OrderService : IOrderService
                 }
             }
             
-            // Если атрибуты переданы, сохраняем их как JSON
             if (itemDto.AttributeValues != null && itemDto.AttributeValues.Any())
             {
                 var attributesDict = itemDto.AttributeValues.ToDictionary(
@@ -133,14 +119,10 @@ public class OrderService : IOrderService
             OrderItems = enrichedItems
         };
 
-        // =============================================================================
-        // Обработка адреса доставки
-        // =============================================================================
         ShippingAddressDTO? shippingAddress = customShippingAddress;
         
         if (shippingAddress == null && shippingAddressId.HasValue)
         {
-            // Получаем адрес из ShippingAddressService
             try
             {
                 var shippingClient = _httpClientFactory.CreateClient("ShippingAddressService");
@@ -158,7 +140,6 @@ public class OrderService : IOrderService
         }
         else if (shippingAddress == null)
         {
-            // Пытаемся получить дефолтный адрес пользователя
             try
             {
                 var shippingClient = _httpClientFactory.CreateClient("ShippingAddressService");
@@ -175,7 +156,6 @@ public class OrderService : IOrderService
             }
         }
 
-        // Сохраняем данные адреса доставки в заказ
         if (shippingAddress != null)
         {
             order.ShippingAddressId = shippingAddress.Id;
@@ -188,22 +168,15 @@ public class OrderService : IOrderService
 
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
-
-        // =============================================================================
-        // Уменьшаем количество товаров на складе (только для физических товаров)
-        // =============================================================================
         try
         {
             foreach (var item in enrichedItems)
             {
-                // Для цифровых товаров не изменяем количество
                 if (item.ProductType == ProductType.Digital)
                 {
                     _logger.LogInformation($"Digital product {item.ProductId} - skipping quantity reduction");
                     continue;
                 }
-
-                // Уменьшаем количество физического товара
                 try
                 {
                     var updateResponse = await productClient.PutAsJsonAsync(
@@ -265,13 +238,10 @@ public class OrderService : IOrderService
 
     public async Task CancelOrder(long orderId)
     {
-        // Переводим заказ в статус CANCELED
         var order = await _context.Orders.FindAsync(orderId);
         if (order != null)
         {
             await UpdateOrderStatus(orderId, OrderStatus.CANCELED);
-            
-            // Дополнительно очищаем корзину покупателя
             try
             {
                 var cartClient = _httpClientFactory.CreateClient("CartService");
@@ -337,7 +307,6 @@ public class OrderService : IOrderService
 
     public async Task<OrderDTO?> CheckoutFromCart(long customerId, long? shippingAddressId = null, ShippingAddressDTO? customShippingAddress = null)
     {
-        // 1. Получаем данные покупателя из UserService
         var userClient = _httpClientFactory.CreateClient("UserService");
         string? customerName = null;
         string? customerEmail = null;
@@ -358,11 +327,8 @@ public class OrderService : IOrderService
         }
         catch (Exception ex)
         {
-            // Если не удалось получить данные пользователя, продолжаем без них
             _logger.LogWarning(ex, $"Failed to load user details for customer {customerId}");
         }
-
-        // 2. Получаем корзину пользователя из CartService
         var cartClient = _httpClientFactory.CreateClient("CartService");
         var cartResponse = await cartClient.GetAsync($"/api/carts/customer/{customerId}");
         
@@ -377,7 +343,6 @@ public class OrderService : IOrderService
             throw new Exception("Корзина пуста");
         }
 
-        // 3. Получаем товары из корзины
         var cartItemsResponse = await cartClient.GetAsync($"/api/carts/{cart.Id}/items");
         if (!cartItemsResponse.IsSuccessStatusCode)
         {
@@ -390,14 +355,12 @@ public class OrderService : IOrderService
             throw new Exception("Корзина пуста");
         }
 
-        // 4. Получаем цены товаров из ProductService
         var productClient = _httpClientFactory.CreateClient("ProductService");
         var orderItems = new List<OrderItem>();
         decimal totalAmount = 0;
 
         foreach (var cartItem in cartItems)
         {
-            // Если данные уже есть в корзине, используем их (актуальная цена всё равно берётся из ProductService)
             ProductDto? product = null;
             CategoryDto? category = null;
             
@@ -415,7 +378,6 @@ public class OrderService : IOrderService
                     throw new Exception($"Товар с ID {cartItem.ProductId} не найден");
                 }
                 
-                // Загружаем категорию если её нет в корзине
                 if (string.IsNullOrEmpty(cartItem.CategoryName))
                 {
                     try
@@ -437,28 +399,21 @@ public class OrderService : IOrderService
                 _logger.LogError(ex, $"Failed to load product {cartItem.ProductId}");
                 throw;
             }
-
-            // =============================================================================
-            // НОВАЯ СИСТЕМА: Сохраняем минимально необходимую информацию о товаре
-            // =============================================================================
+            
             var orderItem = new OrderItem
             {
                 ProductId = cartItem.ProductId,
                 Quantity = cartItem.Quantity,
-                Price = product.Price, // Актуальная цена на момент заказа
+                Price = product.Price,
                 
-                // Сохраняем информацию о товаре на момент покупки
                 ProductName = cartItem.ProductName ?? product.Name,
                 ImageUrl = cartItem.ImageUrl ?? product.MediaFiles?.FirstOrDefault()?.Url,
                 
-                // Категория на момент покупки
                 CategoryId = cartItem.CategoryId ?? product.CategoryId,
                 CategoryName = cartItem.CategoryName ?? category?.Name,
                 
-                // Тип товара на момент покупки
                 ProductType = product.Type,
                 
-                // Атрибуты товара на момент покупки (например: RAM=8GB, Color=Black)
                 ProductAttributesJson = cartItem.AttributeValues != null && cartItem.AttributeValues.Any()
                     ? System.Text.Json.JsonSerializer.Serialize(
                         cartItem.AttributeValues.ToDictionary(
@@ -471,20 +426,14 @@ public class OrderService : IOrderService
             orderItems.Add(orderItem);
             totalAmount += orderItem.Quantity * orderItem.Price;
             
-            // =============================================================================
-            // Уменьшаем количество товара на складе (только для физических товаров)
-            // =============================================================================
             if (product.Type == ProductType.Physical)
             {
                 try
                 {
-                    // Проверяем, достаточно ли товара на складе
                     if (product.Quantity < cartItem.Quantity)
                     {
                         throw new Exception($"Недостаточно товара '{product.Name}' на складе. Доступно: {product.Quantity}, требуется: {cartItem.Quantity}");
                     }
-                    
-                    // Уменьшаем количество товара
                     var updateRequest = new { quantity = product.Quantity - cartItem.Quantity };
                     var updateResponse = await productClient.PutAsJsonAsync($"/api/products/{product.Id}/quantity", updateRequest);
                     
@@ -500,7 +449,6 @@ public class OrderService : IOrderService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"Error updating product quantity for {product.Id}");
-                    // Не прерываем создание заказа, но логируем ошибку
                 }
             }
             else
@@ -509,7 +457,6 @@ public class OrderService : IOrderService
             }
         }
 
-        // 5. Создаём заказ с данными покупателя
         var order = new Order
         {
             CustomerId = customerId,
@@ -521,15 +468,11 @@ public class OrderService : IOrderService
             UpdatedDate = DateTime.UtcNow,
             OrderItems = orderItems
         };
-
-        // =============================================================================
-        // Обработка адреса доставки
-        // =============================================================================
+        
         ShippingAddressDTO? shippingAddress = customShippingAddress;
         
         if (shippingAddress == null && shippingAddressId.HasValue)
         {
-            // Получаем адрес из ShippingAddressService
             try
             {
                 var shippingClient = _httpClientFactory.CreateClient("ShippingAddressService");
@@ -547,7 +490,6 @@ public class OrderService : IOrderService
         }
         else if (shippingAddress == null)
         {
-            // Пытаемся получить дефолтный адрес пользователя
             try
             {
                 var shippingClient = _httpClientFactory.CreateClient("ShippingAddressService");
@@ -564,7 +506,6 @@ public class OrderService : IOrderService
             }
         }
 
-        // Сохраняем данные адреса доставки в заказ
         if (shippingAddress != null)
         {
             order.ShippingAddressId = shippingAddress.Id;
@@ -577,15 +518,12 @@ public class OrderService : IOrderService
 
         _context.Orders.Add(order);
         await _context.SaveChangesAsync();
-
-        // 6. Очищаем корзину после успешного создания заказа
         await cartClient.DeleteAsync($"/api/carts/{customerId}");
-
+        
         return _mapper.Map<OrderDTO>(order);
     }
 }
 
-// DTO для пользователя
 public class UserDto
 {
     public long Id { get; set; }

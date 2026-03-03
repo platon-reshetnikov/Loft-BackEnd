@@ -1,12 +1,9 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using PaymentService.Mappings;
 using PaymentService.Data;
 using Microsoft.EntityFrameworkCore;
 using PaymentService.Services;
 using PaymentService.Services.Providers;
-//
+
 namespace PaymentService
 {
     public class Program
@@ -14,13 +11,11 @@ namespace PaymentService
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
-
-            // Добавляем сервисы контроллеров
+            
             builder.Services.AddControllers();
             builder.Services.AddAutoMapper(typeof(PaymentProfile));
             builder.Services.AddSwaggerGen();
 
-            // DbContext: используем только реальную строку подключения к PostgreSQL из конфигурации.
             var conn = builder.Configuration.GetConnectionString("DefaultConnection");
             if (string.IsNullOrEmpty(conn))
             {
@@ -30,22 +25,18 @@ namespace PaymentService
             builder.Services.AddDbContext<PaymentDbContext>(options =>
                 options.UseNpgsql(conn));
 
-            // Регистрация платежных провайдеров
             builder.Services.AddSingleton<IPaymentProvider, RealStripeProvider>();
             builder.Services.AddSingleton<IPaymentProvider, MockCreditCardProvider>();
             builder.Services.AddSingleton<IPaymentProvider, MockCashOnDeliveryProvider>();
 
-            // Фабрика провайдеров
             builder.Services.AddSingleton<PaymentProviderFactory>();
 
-            // Регистрация сервисов
             builder.Services.AddScoped<IPaymentService, PaymentService.Services.PaymentService>();
             builder.Services.AddScoped<IStripeCheckoutService, StripeCheckoutService>();
             builder.Services.AddHttpClient();
 
             var app = builder.Build();
             
-            // Автоматическое применение миграций при запуске
             using (var scope = app.Services.CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<PaymentDbContext>();
@@ -64,7 +55,6 @@ namespace PaymentService
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            // Настраиваем конвейер обработки запросов
             app.UseRouting();
             app.UseAuthorization();
             app.MapControllers();

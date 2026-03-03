@@ -1,12 +1,9 @@
-﻿using Loft.Common.DTOs;
-using Loft.Common.Enums;
+﻿using Loft.Common.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ProductService.Controllers;
 using ProductService.Services;
-using UserService.Services;
 
-namespace monolith_version.Controllers
+namespace ProductService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -18,7 +15,6 @@ namespace monolith_version.Controllers
         {
             _service = service;
         }
-
 
         [HttpGet("products/pending")]
         [Authorize]
@@ -32,8 +28,7 @@ namespace monolith_version.Controllers
             var products = await _service.GetProductsByModerationStatus(ModerationStatus.Pending);
             return Ok(products);
         }
-
-        // Обновление статуса товара
+        
         [HttpPut("products/{id}/status")]
         [Authorize]
         public async Task<IActionResult> UpdateProductStatus(int id, [FromQuery] ModerationStatus status)

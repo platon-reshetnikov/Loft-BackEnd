@@ -1,14 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 using AutoMapper;
 using Loft.Common.DTOs;
 using Loft.Common.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using ProductService.Data;
 using ProductService.Entities;
 
@@ -16,8 +9,8 @@ namespace ProductService.Services;
 
 public class ProductService : IProductService
 {
-    private readonly ProductDbContext _db; // �������� ���� ������ EF Core
-    private readonly IMapper _mapper;      // AutoMapper ��� �������������� ��������� � DTO � �������
+    private readonly ProductDbContext _db; 
+    private readonly IMapper _mapper;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<ProductService> _logger;
 
@@ -27,14 +20,10 @@ public class ProductService : IProductService
         _mapper = mapper;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        
     }
-
-    // ------------------ PRODUCTS ------------------
-
-    // Получение списка товаров с фильтром по категории, продавцу, цене и атрибутам + пагинация
     public async Task<PagedResultFilterDto<ProductDto>> GetAllProducts(ProductFilterDto filter)
     {
-        // Базовый запрос с подгрузкой связанных данных
         var query = _db.Products
             .Include(p => p.Category)
             .Include(p => p.AttributeValues).ThenInclude(av => av.Attribute)
@@ -43,7 +32,6 @@ public class ProductService : IProductService
             .Where(p => p.Status == ModerationStatus.Approved)
             .AsQueryable();
 
-        // --- Фильтры ---
         if (filter.CategoryId.HasValue && filter.CategoryId.Value > 0)
             query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
 
@@ -77,10 +65,7 @@ public class ProductService : IProductService
             }
         }
 
-        // --- Считаем общее количество товаров до пагинации ---
         var totalCount = await query.CountAsync();
-
-        // --- Пагинация ---
         var page = filter.Page > 0 ? filter.Page : 1;
         var pageSize = filter.PageSize > 0 ? filter.PageSize : 20;
         var skip = (page - 1) * pageSize;
@@ -90,10 +75,7 @@ public class ProductService : IProductService
             .Take(pageSize)
             .ToListAsync();
 
-        // --- Вычисляем общее количество страниц ---
         var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-
-        // --- Возвращаем результат ---
         return new PagedResultFilterDto<ProductDto>
         {
             TotalCount = totalCount,
@@ -104,7 +86,6 @@ public class ProductService : IProductService
         };
     }
 
-    // Получение всех товаров конкретного пользователя
     public async Task<IEnumerable<ProductDto>> GetAllMyProducts(long userId)
     {
         var products = await _db.Products
@@ -118,7 +99,6 @@ public class ProductService : IProductService
         return _mapper.Map<IEnumerable<ProductDto>>(products);
     }
 
-    // Получение одного товара по ID
     public async Task<ProductDto?> GetProductById(int productId, bool isModerator)
     {
         var query = _db.Products
@@ -130,7 +110,6 @@ public class ProductService : IProductService
 
         if (!isModerator)
         {
-            // Обычные пользователи видят только одобренные товары
             query = query.Where(p => p.Status == ModerationStatus.Approved);
         }
 
@@ -139,92 +118,79 @@ public class ProductService : IProductService
         if (product == null)
             return null;
 
-        // Мгновенно увеличивает ViewCount без перезагрузки
         await _db.Products
             .Where(p => p.Id == productId)
             .ExecuteUpdateAsync(setters =>
                 setters.SetProperty(p => p.ViewCount, p => p.ViewCount + 1));
 
-        product.ViewCount++; // Чтобы DTO отдал актуальное количество
+        product.ViewCount++;
 
         return _mapper.Map<ProductDto?>(product);
     }
 
-    // Создание нового товара
     public async Task<ProductDto> CreateProduct(ProductDto productDto)
     {
-        var product = _mapper.Map<Product>(productDto); // преобразуем DTO в сущность
-        product.CreatedAt = DateTime.UtcNow; // устанавливаем дату создания
-        product.UpdatedAt = DateTime.UtcNow; // устанавливаем дату обновления
+        var product = _mapper.Map<Product>(productDto);
+        product.CreatedAt = DateTime.UtcNow;
+        product.UpdatedAt = DateTime.UtcNow;
 
-        _db.Products.Add(product); // добавляем в контекст
-        await _db.SaveChangesAsync(); // сохраняем в БД
+        _db.Products.Add(product);
+        await _db.SaveChangesAsync();
 
-        return _mapper.Map<ProductDto>(product); // возвращаем DTO с заполненным Id
+        return _mapper.Map<ProductDto>(product);
     }
 
-    // Обновление существующего товара
     public async Task<ProductDto?> UpdateProduct(int productId, ProductDto productDto)
     {
-        // Получаем товар из БД с атрибутами и медиа
         var product = await _db.Products
             .Include(p => p.AttributeValues)
             .Include(p => p.MediaFiles)
             .FirstOrDefaultAsync(p => p.Id == productId);
 
-        if (product == null) return null; // если товара нет, возвращаем null
+        if (product == null) return null;
 
-        _mapper.Map(productDto, product); // обновляем поля сущности из DTO
-        product.UpdatedAt = DateTime.UtcNow; // обновляем дату
+        _mapper.Map(productDto, product);
+        product.UpdatedAt = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync(); // сохраняем изменения
-        return _mapper.Map<ProductDto>(product); // возвращаем DTO
+        await _db.SaveChangesAsync();
+        return _mapper.Map<ProductDto>(product);
     }
 
-    // Удаление товара
     public async Task DeleteProduct(int productId)
     {
-        // Загружаем продукт с зависимостями
         var product = await _db.Products
-            .Include(p => p.MediaFiles) // медиа самого продукта
+            .Include(p => p.MediaFiles)
             .Include(p => p.Comments)
-                .ThenInclude(c => c.MediaFiles) // медиа из комментариев
-            .Include(p => p.AttributeValues) // значения атрибутов
+                .ThenInclude(c => c.MediaFiles) 
+            .Include(p => p.AttributeValues)
             .FirstOrDefaultAsync(p => p.Id == productId);
 
         if (product == null)
-            return; // или throw new KeyNotFoundException("Продукт не найден");
+            return;
 
-        // Удаляем медиа из комментариев
         var commentMedia = product.Comments.SelectMany(c => c.MediaFiles).ToList();
         if (commentMedia.Any())
             _db.MediaFiles.RemoveRange(commentMedia);
 
-        // Удаляем комментарии
         if (product.Comments.Any())
             _db.Comments.RemoveRange(product.Comments);
 
-        // Удаляем медиа самого продукта
         if (product.MediaFiles.Any())
             _db.MediaFiles.RemoveRange(product.MediaFiles);
 
-        // Удаляем значения атрибутов
         if (product.AttributeValues.Any())
             _db.ProductAttributeValues.RemoveRange(product.AttributeValues);
 
-        // Удаляем сам продукт
         _db.Products.Remove(product);
 
         await _db.SaveChangesAsync();
     }
 
-    // Обновление количества товара (для физических товаров после покупки)
     public async Task<ProductDto?> UpdateProductQuantity(int productId, int newQuantity)
     {
         var product = await _db.Products.FindAsync(productId);
         if (product == null) return null;
 
-        // Проверяем, что это физический товар
         if (product.Type == ProductType.Digital)
         {
             _logger.LogWarning($"Cannot update quantity for digital product {productId}");
@@ -240,38 +206,28 @@ public class ProductService : IProductService
         
         return _mapper.Map<ProductDto>(product);
     }
-
-    // ------------------ CATEGORIES ------------------
-
-    // Получение категорий все категории в древовидной структуре    
+    
     public async Task<IEnumerable<CategoryDto>> GetAllCategories()
     {
-        // Загружаем все категории одним запросом
         var categories = await _db.Categories
             .Include(c => c.CategoryAttributes).ThenInclude(ca => ca.Attribute)
             .Include(c => c.Products)
             .AsNoTracking()
             .ToListAsync();
 
-        // Маппим все категории в DTO
         var categoryDtos = _mapper.Map<List<CategoryDto>>(categories);
-
-        // Создаём словарь для быстрого поиска родителя по Id
         var lookup = categoryDtos.ToDictionary(c => c.Id);
 
-        // Список для хранения только верхнего уровня категорий
         List<CategoryDto> rootCategories = new();
 
         foreach (var category in categoryDtos)
         {
             if (category.ParentCategoryId == null)
             {
-                // Если нет родителя — это корневая категория
                 rootCategories.Add(category);
             }
             else if (lookup.TryGetValue(category.ParentCategoryId.Value, out var parent))
             {
-                // Добавляем подкатегорию в родительскую
                 parent.SubCategories ??= new List<CategoryDto>();
                 parent.SubCategories.Add(category);
             }
@@ -279,8 +235,7 @@ public class ProductService : IProductService
 
         return rootCategories;
     }
-
-    // Получение категории по ID
+    
     public async Task<CategoryDto?> GetCategoryById(int categoryId)
     {
         var category = await _db.Categories
@@ -293,47 +248,39 @@ public class ProductService : IProductService
         return _mapper.Map<CategoryDto?>(category);
     }
 
-    // Создание категории
     public async Task<CategoryDto> CreateCategory(CategoryDto dto)
     {
 
-        // Создаем сущность категории
         var category = new Category
         {
             Name = dto.Name,
             ImageUrl = dto.ImageUrl,
             ParentCategoryId = dto.ParentCategoryId,
-            Status = 0,  // <- берем из DTO
-            Type = dto.Type,      // <- берем из DTO
+            Status = 0,
+            Type = dto.Type,
             ViewCount = 0
         };
 
         _db.Categories.Add(category);
-        await _db.SaveChangesAsync(); // получаем Id категории
-
-        // Возвращаем DTO категории с пустыми подкатегориями и атрибутами
+        await _db.SaveChangesAsync();
         var result = _mapper.Map<CategoryDto>(category);
-
         return result;
     }
 
-    // Обновление категории
     public async Task<CategoryDto?> UpdateCategory(int categoryId, CategoryDto categoryDto)
     {
         var category = await _db.Categories
-            .Include(c => c.SubCategories) // подгружаем подкатегории
+            .Include(c => c.SubCategories)
             .FirstOrDefaultAsync(c => c.Id == categoryId);
 
         if (category == null) return null;
 
         _mapper.Map(categoryDto, category);
 
-        // Обновление/добавление подкатегорий
         if (categoryDto.SubCategories != null)
         {
             foreach (var subDto in categoryDto.SubCategories)
             {
-                // Если подкатегория уже есть, обновляем
                 var existingSub = category.SubCategories.FirstOrDefault(sc => sc.Id == subDto.Id);
                 if (existingSub != null)
                 {
@@ -341,7 +288,6 @@ public class ProductService : IProductService
                 }
                 else
                 {
-                    // Новая подкатегория
                     var newSub = _mapper.Map<Category>(subDto);
                     newSub.ParentCategoryId = category.Id;
                     _db.Categories.Add(newSub);
@@ -353,7 +299,6 @@ public class ProductService : IProductService
         return _mapper.Map<CategoryDto>(category);
     }
 
-    // Удаление категории
     public async Task DeleteCategory(int categoryId)
     {
         var category = await _db.Categories.FindAsync(categoryId);
@@ -363,29 +308,22 @@ public class ProductService : IProductService
             await _db.SaveChangesAsync();
         }
     }
-
-    // ------------------ ATTRIBUTES ------------------
-
-    // Получение всех атрибутов 
+    
     public async Task<IEnumerable<AttributeDto>> GetAllAttributes()
     {
-        // Загружаем все атрибуты из базы
         var attributes = await _db.AttributeEntity
             .AsNoTracking() // для ускорения — данные только читаются
             .ToListAsync();
-
-        // Маппим сущности в DTO
+        
         return _mapper.Map<IEnumerable<AttributeDto>>(attributes);
     }
 
-    // Получение атрибута по ID
     public async Task<AttributeDto?> GetAttributeById(int attributeId)
     {
         var attribute = await _db.AttributeEntity.FindAsync(attributeId);
         return _mapper.Map<AttributeDto?>(attribute);
     }
 
-    // Создание нового атрибута
     public async Task<AttributeDto> CreateAttribute(AttributeDto attributeDto)
     {
         var attribute = _mapper.Map<AttributeEntity>(attributeDto);
@@ -394,7 +332,6 @@ public class ProductService : IProductService
         return _mapper.Map<AttributeDto>(attribute);
     }
 
-    // Обновление атрибута
     public async Task<AttributeDto?> UpdateAttribute(int attributeId, AttributeDto attributeDto)
     {
         var attribute = await _db.AttributeEntity.FindAsync(attributeId);
@@ -405,58 +342,46 @@ public class ProductService : IProductService
         return _mapper.Map<AttributeDto>(attribute);
     }
 
-    // Удаление атрибута
     public async Task DeleteAttribute(int attributeId)
     {
-        // Загружаем атрибут вместе с его значениями
         var attribute = await _db.AttributeEntity
-            .Include(a => a.AttributeValues) // все ProductAttributeValues
-            .Include(a => a.CategoryAttributes) // все связи с категориями
+            .Include(a => a.AttributeValues)
+            .Include(a => a.CategoryAttributes)
             .FirstOrDefaultAsync(a => a.Id == attributeId);
 
         if (attribute != null)
         {
-            // Удаляем все значения атрибута у товаров
             if (attribute.AttributeValues.Any())
                 _db.ProductAttributeValues.RemoveRange(attribute.AttributeValues);
 
-            // Удаляем все связи с категориями
             if (attribute.CategoryAttributes.Any())
                 _db.CategoryAttributes.RemoveRange(attribute.CategoryAttributes);
-
-            // Удаляем сам атрибут
             _db.AttributeEntity.Remove(attribute);
-
+            
             await _db.SaveChangesAsync();
         }
     }
-
-    // ------------------ CATEGORY ATTRIBUTES ------------------
-
-    // Привязка атрибута к категории
+    
     public async Task<CategoryAttributeDto> AssignAttributeToCategory(int categoryId, int attributeId, bool isRequired, int orderIndex)
     {
-        // Проверяем, есть ли уже такая привязка
         var existing = await _db.CategoryAttributes
             .FirstOrDefaultAsync(ca => ca.CategoryId == categoryId && ca.AttributeId == attributeId);
 
         if (existing != null)
         {
-            // Если есть, обновляем параметры
             existing.IsRequired = isRequired;
             existing.OrderIndex = orderIndex;
             await _db.SaveChangesAsync();
             return _mapper.Map<CategoryAttributeDto>(existing);
         }
 
-        // Если нет, создаём новую
         var categoryAttribute = new CategoryAttribute
         {
             CategoryId = categoryId,
             AttributeId = attributeId,
             IsRequired = isRequired,
             OrderIndex = orderIndex,
-            Status = ModerationStatus.Pending // по умолчанию в ожидании модерации
+            Status = ModerationStatus.Pending
         };
 
         _db.CategoryAttributes.Add(categoryAttribute);
@@ -464,7 +389,6 @@ public class ProductService : IProductService
         return _mapper.Map<CategoryAttributeDto>(categoryAttribute);
     }
 
-    // Удаление привязки атрибута от категории
     public async Task RemoveAttributeFromCategory(int categoryId, int attributeId)
     {
         var categoryAttribute = await _db.CategoryAttributes
@@ -477,19 +401,16 @@ public class ProductService : IProductService
         }
     }
 
-    // Получение всех атрибутов категории
     public async Task<IEnumerable<CategoryAttributeDto>> GetCategoryAttributes(int categoryId)
     {
         var attributes = await _db.CategoryAttributes
-            .Include(ca => ca.Attribute) // подгружаем сам атрибут
+            .Include(ca => ca.Attribute)
             .Where(ca => ca.CategoryId == categoryId)
             .ToListAsync();
 
         return _mapper.Map<IEnumerable<CategoryAttributeDto>>(attributes);
     }
-
-    // ------------------ MODERATION ------------------
-    // Получение товаров по статусу модерации
+    
     public async Task<IEnumerable<ProductDto>> GetProductsByModerationStatus(ModerationStatus status)
     {
         var products = await _db.Products
@@ -501,7 +422,7 @@ public class ProductService : IProductService
 
         return _mapper.Map<IEnumerable<ProductDto>>(products);
     }
-    // Обновление статуса модерации товара
+
     public async Task<ProductDto?> UpdateProductModerationStatus(int productId, ModerationStatus status)
     {
         var product = await _db.Products.FindAsync(productId);

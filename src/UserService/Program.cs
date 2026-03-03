@@ -1,15 +1,9 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer; using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication.JwtBearer; 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
-//using UserService.Swagger;
-using System.IO;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 using UserService.Data;
 using UserService.Hubs;
 using UserService.Mappings;
@@ -23,33 +17,27 @@ namespace UserService
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
             builder.Services.AddAutoMapper(typeof(UserProfile));
             builder.Services.AddSignalR(); // Добавляем SignalR сервис
 
-            // Configure DbContext (PostgreSQL) - use connection string or default file
             var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<UserDbContext>(options => 
                 options.UseNpgsql(defaultConn, npgsqlOptions =>
                 {
-            //        npgsqlOptions.MigrationsAssembly(typeof(Program).Assembly.FullName);
                 }));
 
-            // Добавляем TokenService и UserService
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IUserService, UserService.Services.UserService>();
             builder.Services.AddScoped<IChatService, ChatService>();
             builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 
-            // HttpClient для связи с ShippingAddressService
             builder.Services.AddHttpClient("ShippingAddressService", client =>
             {
                 var shippingServiceUrl = builder.Configuration["Services:ShippingAddressService"] ?? "http://localhost:5006";
                 client.BaseAddress = new Uri(shippingServiceUrl);
             });
 
-            // Настройка аутентификации JWT
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtKey = jwtSection.GetValue<string>("Key");
             var issuer = jwtSection.GetValue<string>("Issuer");
@@ -58,8 +46,6 @@ namespace UserService
             if (!string.IsNullOrEmpty(jwtKey))
             {
                 var key = Encoding.UTF8.GetBytes(jwtKey);
-              //  Console.WriteLine($"[UserService] JWT Configuration - Key: {(!string.IsNullOrEmpty(jwtKey) ? "SET" : "NOT SET")}, Issuer: {issuer}, Audience: {audience}");
-              //  Console.WriteLine($"[DEBUG] JWT Key length: {jwtKey?.Length ?? 0}, First 5 chars: {jwtKey?.Substring(0, Math.Min(5, jwtKey.Length))}");
                 builder.Services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -83,7 +69,6 @@ namespace UserService
                         RoleClaimType = ClaimTypes.Role
                     };
 
-                    // Добавляем события для отладки
                     options.Events = new JwtBearerEvents
                     {
                         OnMessageReceived = context =>
@@ -117,7 +102,6 @@ namespace UserService
                 Console.WriteLine("[UserService] WARNING: JWT Key is not configured!");
             }
 
-            // Swagger с поддержкой Bearer
             builder.Services.AddSwaggerGen(c =>
              {
                  c.SwaggerDoc("v1", new OpenApiInfo { Title = "UserService API", Version = "v1" });
@@ -139,14 +123,13 @@ namespace UserService
                         Reference = new OpenApiReference
                    {
                  Type = ReferenceType.SecurityScheme,
-                 Id = "bearerAuth"  // <- обязательно совпадает с AddSecurityDefinition
+                 Id = "bearerAuth"
                    }
                    },
                   Array.Empty<string>()
                  }
                     });
 
-                 // Only include controllers from this assembly (avoid controllers from referenced projects)
                  c.DocInclusionPredicate((docName, apiDesc) =>
                 {
                     var cad = apiDesc.ActionDescriptor as Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
@@ -154,13 +137,11 @@ namespace UserService
                     return cad.ControllerTypeInfo.Assembly == typeof(Program).Assembly;
                 });
 
-               // Map IFormFile to binary in OpenAPI - simple mapping without filter
                 c.MapType<Microsoft.AspNetCore.Http.IFormFile>(() => new Microsoft.OpenApi.Models.OpenApiSchema { Type = "string", Format = "binary" });
              });
 
             var app = builder.Build();
 
-            // Создаём/мигрируем базу данных при старте и логируем строку подключения
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<UserDbContext>();
@@ -169,7 +150,6 @@ namespace UserService
                     var conn = builder.Configuration.GetConnectionString("DefaultConnection");
                     Console.WriteLine($"[UserService] Using PostgreSQL connection: {conn}");
 
-                    // Попытки подключения к БД с повторными попытками, чтобы дождаться старта Postgres
                     var maxAttempts = 10;
                     var attempt = 0;
                     var delaySeconds = 2;
@@ -181,7 +161,6 @@ namespace UserService
                             attempt++;
                             Console.WriteLine($"[UserService] Attempting DB connection (attempt {attempt}/{maxAttempts})...");
                             
-                            // Проверяем подключение к БД
                             var canConnect = db.Database.CanConnect();
                             if (!canConnect)
                             {
@@ -189,8 +168,7 @@ namespace UserService
                             }
                             
                             Console.WriteLine("[UserService] Database connection successful.");
-                            
-                            // Проверяем наличие pending migrations
+
                             var pendingMigrations = db.Database.GetPendingMigrations().ToList();
                             var appliedMigrations = db.Database.GetAppliedMigrations().ToList();
                             
@@ -213,7 +191,6 @@ namespace UserService
                                 Console.WriteLine("[UserService] Database is up to date, no pending migrations.");
                             }
                             
-                            // Проверяем что можем выполнить запрос
                             var userCount = db.Users.Count();
                             Console.WriteLine($"[UserService] Database verification successful. Current user count: {userCount}");
                             
@@ -242,7 +219,6 @@ namespace UserService
                 }
             }
 
-            // Ensure wwwroot exists so static files (avatars) can be served
             try
             {
                 var wwwrootPath = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
@@ -250,14 +226,11 @@ namespace UserService
             }
             catch { }
 
-            // Настраиваем конвейер обработки запросов
             app.UseRouting();
-            // CORS удалён - он обрабатывается только в ApiGateway
 
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            // Serve static files (wwwroot) so avatars can be retrieved
             app.UseStaticFiles();
 
             app.UseAuthentication();

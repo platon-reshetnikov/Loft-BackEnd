@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Loft.Common.Enums;
 
 namespace Loft.Common.DTOs

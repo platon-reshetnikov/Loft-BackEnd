@@ -1,12 +1,7 @@
-using Loft.Common.Enums;
-using Stripe;
-//
+using Stripe; 
+
 namespace PaymentService.Services.Providers;
 
-/// <summary>
-/// Реальный провайдер Stripe (test mode)
-/// Использует Stripe API с тестовыми ключами
-/// </summary>
 public class RealStripeProvider : IPaymentProvider
 {
     private readonly ILogger<RealStripeProvider> _logger;
@@ -19,14 +14,12 @@ public class RealStripeProvider : IPaymentProvider
     {
         _logger = logger;
         
-        // Получаем API ключ из конфигурации
         var apiKey = configuration["Stripe:SecretKey"];
         if (string.IsNullOrEmpty(apiKey))
         {
             throw new InvalidOperationException("Stripe:SecretKey is not configured");
         }
-
-        // Устанавливаем глобальный API ключ для Stripe
+        
         StripeConfiguration.ApiKey = apiKey;
 
         _paymentIntentService = new PaymentIntentService();
@@ -40,17 +33,15 @@ public class RealStripeProvider : IPaymentProvider
     {
         try
         {
-            // Stripe работает с пенсами для GBP (или центами для USD)
-            // 1 GBP = 100 pence, 1 USD = 100 cents
             var amountInSmallestUnit = (long)(amount * 100);
 
             var options = new PaymentIntentCreateOptions
             {
                 Amount = amountInSmallestUnit,
-                Currency = "usd", // Используем GBP как в вашем примере
-                PaymentMethod = "pm_card_visa", // Тестовый метод оплаты
-                PaymentMethodTypes = new List<string> { "card" }, // Явно указываем card
-                AutomaticPaymentMethods = null, // Отключаем автоматические методы, используем явные
+                Currency = "usd",
+                PaymentMethod = "pm_card_visa",
+                PaymentMethodTypes = new List<string> { "card" },
+                AutomaticPaymentMethods = null,
                 Metadata = new Dictionary<string, string>
                 {
                     { "order_id", orderId.ToString() },
@@ -79,8 +70,7 @@ public class RealStripeProvider : IPaymentProvider
         {
             var options = new PaymentIntentConfirmOptions
             {
-                // В test mode можно использовать тестовые карты
-                PaymentMethod = "pm_card_visa", // Тестовая карта Visa
+                PaymentMethod = "pm_card_visa",
             };
 
             var paymentIntent = await _paymentIntentService.ConfirmAsync(transactionId, options);
@@ -102,15 +92,13 @@ public class RealStripeProvider : IPaymentProvider
     {
         try
         {
-            // Получаем информацию о платеже
             var paymentIntent = await _paymentIntentService.GetAsync(transactionId);
 
             if (paymentIntent.Status != "succeeded")
             {
                 throw new InvalidOperationException($"Cannot refund payment with status: {paymentIntent.Status}");
             }
-
-            // Создаем возврат
+            
             var refundOptions = new RefundCreateOptions
             {
                 PaymentIntent = transactionId,
@@ -131,4 +119,3 @@ public class RealStripeProvider : IPaymentProvider
         }
     }
 }
-

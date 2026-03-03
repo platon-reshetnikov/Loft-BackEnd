@@ -1,6 +1,5 @@
 namespace Loft.Common.DTOs;
 
-
 public class ShippingAddressDTO
 {
     public long Id { get; set; }

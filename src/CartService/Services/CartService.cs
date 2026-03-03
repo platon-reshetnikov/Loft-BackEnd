@@ -1,16 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 using AutoMapper;
 using CartService.Data;
 using CartService.Entities;
 using Loft.Common.DTOs;
 using Loft.Common.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace CartService.Services;
 
@@ -93,7 +86,6 @@ public class CartService : ICartService
     {
         if (quantity <= 0) quantity = 1;
         
-        // Получаем информацию о товаре из ProductService
         ProductDto? productInfo = null;
         CategoryDto? categoryInfo = null;
         try
@@ -110,7 +102,6 @@ public class CartService : ICartService
                 productInfo = await productResponse.Content.ReadFromJsonAsync<ProductDto>();
                 _logger.LogInformation($"Product loaded: Name={productInfo?.Name}, Price={productInfo?.Price}, CategoryId={productInfo?.CategoryId}");
                 
-                // Получаем информацию о категории
                 if (productInfo != null && productInfo.CategoryId > 0)
                 {
                     try
@@ -157,7 +148,6 @@ public class CartService : ICartService
         var existing = cart.CartItems.FirstOrDefault(ci => ci.ProductId == productId);
         if (existing != null)
         {
-            // Для цифровых товаров количество всегда = 1, не увеличиваем
             if (productInfo != null && productInfo.Type == ProductType.Digital)
             {
                 _logger.LogInformation($"Digital product {productId} already in cart, skipping quantity increase");
@@ -167,7 +157,6 @@ public class CartService : ICartService
                 existing.Quantity += quantity;
             }
             
-            // Обновляем информацию о товаре, если она была загружена
             if (productInfo != null)
             {
                 existing.ProductName = productInfo.Name;
@@ -185,7 +174,7 @@ public class CartService : ICartService
             var item = new CartItem 
             { 
                 ProductId = productId, 
-                Quantity = productInfo?.Type == ProductType.Digital ? 1 : quantity, // Для цифровых товаров всегда 1
+                Quantity = productInfo?.Type == ProductType.Digital ? 1 : quantity,
                 Cart = cart,
                 ProductName = productInfo?.Name,
                 Price = productInfo?.Price ?? 0,
@@ -206,7 +195,6 @@ public class CartService : ICartService
         await _db.SaveChangesAsync();
         _logger.LogInformation($"Changes saved successfully");
         
-        // Перезагружаем корзину с обновленными данными
         cart = await _db.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.CustomerId == customerId);
         _logger.LogInformation($"Reloaded cart from DB with {cart?.CartItems.Count ?? 0} items");
         
@@ -243,7 +231,6 @@ public class CartService : ICartService
         var item = cart.CartItems.FirstOrDefault(ci => ci.ProductId == productId);
         if (item == null) return null;
         
-        // Для цифровых товаров запрещаем изменение количества
         if (item.ProductType == ProductType.Digital && quantity != item.Quantity)
         {
             _logger.LogWarning($"Cannot update quantity for digital product {productId}. Quantity is always 1 for digital products.");
@@ -297,13 +284,11 @@ public class CartService : ICartService
             var existing = toCart.CartItems.FirstOrDefault(ci => ci.ProductId == item.ProductId);
             if (existing != null)
             {
-                // Для цифровых товаров не увеличиваем количество
                 if (item.ProductType != ProductType.Digital)
                 {
                     existing.Quantity += item.Quantity;
                 }
                 
-                // Обновляем информацию о товаре из исходного элемента
                 if (!string.IsNullOrEmpty(item.ProductName))
                 {
                     existing.ProductName = item.ProductName;
@@ -336,12 +321,10 @@ public class CartService : ICartService
             }
         }
 
-        // вместо очистки позиций — удаляем исходную корзину целиком
         _db.Carts.Remove(fromCart);
         await _db.SaveChangesAsync();
     }
-
-
+    
     private async Task<List<CartItemDTO>> EnrichCartItemsWithProductInfoReturn(List<CartItemDTO> items)
     {
         if (items == null || !items.Any()) return items ?? new List<CartItemDTO>();
@@ -352,14 +335,12 @@ public class CartService : ICartService
             var client = _httpClientFactory.CreateClient("ProductService");
             foreach (var item in items)
             {
-                // Если данные уже есть, используем их
                 if (!string.IsNullOrEmpty(item.ProductName) && item.Price > 0 && item.CategoryId != null)
                 {
                     result.Add(item);
                     continue;
                 }
                 
-                // Если данных нет - загружаем из ProductService
                 try
                 {
                     var productResponse = await client.GetAsync($"/api/products/{item.ProductId}");
@@ -368,7 +349,6 @@ public class CartService : ICartService
                         var product = await productResponse.Content.ReadFromJsonAsync<ProductDto>();
                         if (product != null)
                         {
-                            // Пытаемся получить категорию
                             CategoryDto? category = null;
                             try
                             {
@@ -405,14 +385,13 @@ public class CartService : ICartService
                 {
                     _logger.LogWarning(ex, $"Error loading product {item.ProductId}");
                 }
-                // fallback
                 result.Add(item);
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error enriching cart items with product info");
-            return items; // fallback без изменений
+            return items;
         }
         return result;
     }

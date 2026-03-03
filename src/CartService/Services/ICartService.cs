@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Loft.Common.DTOs;
 
 namespace CartService.Services;
@@ -15,8 +13,4 @@ public interface ICartService
     Task ClearCart(long customerId);
     Task MergeCarts(long fromCustomerId,long toCustomerId);
     
-    /*
-     * Примечания: GetCartByCustomerId может возвращать null,
-     * если корзины нет; Update возвращает null если элемент отсутствует.
-     */
 }

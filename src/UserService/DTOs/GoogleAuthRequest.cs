@@ -16,4 +16,3 @@ public class GoogleAuthResponse
     public string? Token { get; set; }
     public bool IsNewUser { get; set; }
 }
-

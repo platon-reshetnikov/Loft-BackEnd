@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PaymentService.Data;
 using PaymentService.Entities;
 using PaymentService.Services.Providers;
-//
+
 namespace PaymentService.Services;
 
 public class PaymentService : IPaymentService
@@ -32,13 +32,9 @@ public class PaymentService : IPaymentService
         _logger.LogInformation("Creating payment for order {OrderId} with method {Method}", 
             dto.OrderId, dto.Method);
 
-        // Получаем провайдер для выбранного метода
         var provider = _providerFactory.GetProvider(dto.Method);
-        
-        // Создаем транзакцию через провайдер
         var transactionId = await provider.CreatePaymentAsync(dto.Amount, dto.OrderId);
 
-        // Создаем запись в БД
         var payment = new Payment
         {
             OrderId = dto.OrderId,
@@ -71,8 +67,7 @@ public class PaymentService : IPaymentService
             _logger.LogWarning("Payment {PaymentId} already completed", paymentId);
             return _mapper.Map<PaymentDTO>(payment);
         }
-
-        // Получаем провайдер и подтверждаем платеж
+        
         var provider = _providerFactory.GetProvider(payment.Method);
         var success = await provider.ConfirmPaymentAsync(payment.TransactionId!);
 
@@ -113,8 +108,7 @@ public class PaymentService : IPaymentService
 
         if (payment.Status != PaymentStatus.COMPLETED)
             throw new InvalidOperationException("Can only refund completed payments");
-
-        // Получаем провайдер и делаем возврат
+        
         var provider = _providerFactory.GetProvider(payment.Method);
         var success = await provider.RefundPaymentAsync(payment.TransactionId!);
 

@@ -1,7 +1,7 @@
 using Loft.Common.Enums;
 
-// DTO для отображения товара (чтение)
 namespace Loft.Common.DTOs
+
 {
     public class ProductDto
     {
@@ -19,13 +19,10 @@ namespace Loft.Common.DTOs
         public DateTime? CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
-        // Атрибуты товара
         public ICollection<ProductAttributeValueDto>? AttributeValues { get; set; }
 
-        // Медиа-файлы
         public ICollection<MediaFileDto>? MediaFiles { get; set; }
 
-        // Комментарии (опционально)
         public ICollection<CommentDto>? Comments { get; set; }
     }
 

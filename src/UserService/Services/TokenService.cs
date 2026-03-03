@@ -1,10 +1,8 @@
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Loft.Common.DTOs;
-using Microsoft.Extensions.Configuration;
 
 namespace UserService.Services;
 
@@ -26,7 +24,6 @@ public class TokenService : ITokenService
         configuration.GetSection("Jwt").Bind(_settings);
         if (string.IsNullOrWhiteSpace(_settings.Key))
         {
-            // fallback dev key
             _settings.Key = "DevKey_ChangeMe_ForLocalOnly_1234567890";
         }
         if (_settings.ExpireMinutes <= 0)
@@ -39,7 +36,6 @@ public class TokenService : ITokenService
     {
         var claims = new List<Claim>
         {
-            // subject should be user's id so mapped NameIdentifier contains numeric id
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),

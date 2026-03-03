@@ -19,11 +19,7 @@ namespace ShippingAddressService.Controllers
             _addressService = addressService;
             _logger = logger;
         }
-
-        /// <summary>
-        /// Получить идентификатор пользователя из Claims (для авторизованных запросов)
-        /// Если пользователь не авторизован, возвращает null
-        /// </summary>
+        
         private long? GetUserIdFromClaims()
         {
             var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -37,10 +33,7 @@ namespace ShippingAddressService.Controllers
 
             return null;
         }
-
-        /// <summary>
-        /// Получить все адреса доставки текущего пользователя
-        /// </summary>
+        
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ShippingAddressDTO>>> GetMyAddresses()
         {
@@ -53,20 +46,14 @@ namespace ShippingAddressService.Controllers
             var addresses = await _addressService.GetAddressesByUserId(userId.Value);
             return Ok(addresses);
         }
-
-        /// <summary>
-        /// Получить адреса конкретного пользователя (по customerId в query параметре)
-        /// </summary>
+        
         [HttpGet("customer/{customerId}")]
         public async Task<ActionResult<IEnumerable<ShippingAddressDTO>>> GetAddressesByCustomerId(long customerId)
         {
             var addresses = await _addressService.GetAddressesByUserId(customerId);
             return Ok(addresses);
         }
-
-        /// <summary>
-        /// Получить конкретный адрес по ID
-        /// </summary>
+        
         [HttpGet("{id}")]
         public async Task<ActionResult<ShippingAddressDTO>> GetAddressById(long id)
         {
@@ -76,7 +63,6 @@ namespace ShippingAddressService.Controllers
                 return NotFound(new { message = $"Address with ID {id} not found" });
             }
 
-            // Проверка прав доступа (опционально)
             var userId = GetUserIdFromClaims();
             if (userId.HasValue && address.CustomerId != userId.Value)
             {
@@ -85,10 +71,7 @@ namespace ShippingAddressService.Controllers
 
             return Ok(address);
         }
-
-        /// <summary>
-        /// Получить дефолтный адрес текущего пользователя
-        /// </summary>
+        
         [HttpGet("default")]
         public async Task<ActionResult<ShippingAddressDTO>> GetMyDefaultAddress()
         {
@@ -106,10 +89,7 @@ namespace ShippingAddressService.Controllers
 
             return Ok(address);
         }
-
-        /// <summary>
-        /// Получить дефолтный адрес конкретного пользователя
-        /// </summary>
+        
         [HttpGet("customer/{customerId}/default")]
         public async Task<ActionResult<ShippingAddressDTO>> GetDefaultAddressByCustomerId(long customerId)
         {
@@ -121,10 +101,7 @@ namespace ShippingAddressService.Controllers
 
             return Ok(address);
         }
-
-        /// <summary>
-        /// Создать новый адрес доставки для текущего пользователя
-        /// </summary>
+        
         [HttpPost]
         public async Task<ActionResult<ShippingAddressDTO>> CreateAddress([FromBody] ShippingAddressCreateDTO addressDto)
         {
@@ -137,10 +114,7 @@ namespace ShippingAddressService.Controllers
             var created = await _addressService.AddAddress(userId.Value, addressDto);
             return CreatedAtAction(nameof(GetAddressById), new { id = created.Id }, created);
         }
-
-        /// <summary>
-        /// Создать новый адрес для конкретного пользователя
-        /// </summary>
+        
         [HttpPost("customer/{customerId}")]
         public async Task<ActionResult<ShippingAddressDTO>> CreateAddressForCustomer(
             long customerId,
@@ -149,10 +123,7 @@ namespace ShippingAddressService.Controllers
             var created = await _addressService.AddAddress(customerId, addressDto);
             return CreatedAtAction(nameof(GetAddressById), new { id = created.Id }, created);
         }
-
-        /// <summary>
-        /// Обновить адрес доставки
-        /// </summary>
+        
         [HttpPut("{id}")]
         public async Task<ActionResult<ShippingAddressDTO>> UpdateAddress(
             long id,
@@ -172,10 +143,7 @@ namespace ShippingAddressService.Controllers
 
             return Ok(updated);
         }
-
-        /// <summary>
-        /// Удалить адрес доставки
-        /// </summary>
+        
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAddress(long id)
         {
@@ -193,10 +161,7 @@ namespace ShippingAddressService.Controllers
 
             return NoContent();
         }
-
-        /// <summary>
-        /// Установить адрес как дефолтный
-        /// </summary>
+        
         [HttpPost("{id}/set-default")]
         public async Task<IActionResult> SetDefaultAddress(long id)
         {

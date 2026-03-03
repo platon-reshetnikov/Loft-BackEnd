@@ -1,4 +1,3 @@
-using Loft.Common.DTOs;
 using MediaService.Data;
 using MediaService.Entities;
 
@@ -19,7 +18,6 @@ namespace MediaService.Services
             var extension = Path.GetExtension(file.FileName);
             var storedName = $"{Guid.NewGuid()}{extension}";
 
-            // Выбираем корневую папку в зависимости от приватности
             var baseFolder = isPrivate ? "private" : "public";
             var categoryPath = Path.Combine(_storageRoot, baseFolder, category);
 
@@ -40,7 +38,7 @@ namespace MediaService.Services
                 RelativePath = Path.Combine(baseFolder, category, storedName),
                 IsPrivate = isPrivate,
                 FileType = GetFileType(extension),
-                Url = isPrivate ? null : $"/media/{category}/{storedName}", // публичный URL только для public
+                Url = isPrivate ? null : $"/media/{category}/{storedName}",
                 UploadedBy = uploadedBy
             };
 
@@ -131,13 +129,12 @@ namespace MediaService.Services
             return true;
         }
 
-public IEnumerable<MediaFile> GetFilesByUser(int userId)
-{
-    return _db.MediaFiles
-              .Where(f => f.UploadedBy == userId && !f.IsPrivate) // только публичные
+        public IEnumerable<MediaFile> GetFilesByUser(int userId)
+        {
+             return _db.MediaFiles
+              .Where(f => f.UploadedBy == userId && !f.IsPrivate)
               .OrderByDescending(f => f.UploadedAt)
               .ToList();
-}
+        }
     }
 }
-

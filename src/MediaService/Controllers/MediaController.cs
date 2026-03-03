@@ -19,7 +19,6 @@ namespace MediaService.Controllers
             _mapper = mapper;
         }
 
-        // загрузка файла в указанную категорию
         [HttpPost("upload/{category}")]
         [Authorize]
         public async Task<IActionResult> Upload([FromForm] UploadFileDto dto)
@@ -31,40 +30,31 @@ namespace MediaService.Controllers
 
             try
             {
-                // Получаем ID пользователя из токена
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 if (userIdClaim == null) return Unauthorized();
 
                 if (!int.TryParse(userIdClaim.Value, out int userId))
                     return Unauthorized();
 
-                // Передаем userId в сервис при загрузке
                 var media = await _mediaService.UploadFileAsync(dto.File, dto.Category, userId, dto.IsPrivate);
-
-
+                
                 if (!media.IsPrivate)
                 {
-                    // Публичный файл — возвращаем ссылку
                     return Ok(media.Url);
                 }
 
-                // Приватный файл — возвращаем Id в базе
                 return Ok(media.Id);
             }
             catch (ArgumentException ex)
             {
-                // Ошибка при загрузке (например, недопустимое расширение)
                 return BadRequest(new { Message = ex.Message });
             }
             catch (Exception ex)
             {
-                // Любые другие ошибки
                 return StatusCode(500, new { Message = "Internal server error", Details = ex.Message });
             }
         }
 
-
-        // генерация токена для скачивания приватного файла
         [HttpPost("token/{mediaId}")]
         [Authorize]
         public async Task<IActionResult> GenerateToken(Guid mediaId, [FromQuery] int hours = 24)
@@ -72,8 +62,7 @@ namespace MediaService.Controllers
             var token = await _mediaService.GenerateDownloadTokenAsync(mediaId, TimeSpan.FromHours(hours));
             return Ok(new { downloadUrl = $"/api/media/download?token={token.Token}", expiresAt = token.ExpiresAt });
         }
-
-        // скачивание файла по токену
+        
         [HttpGet("download")]
         public async Task<IActionResult> Download([FromQuery] string token)
         {
@@ -87,13 +76,11 @@ namespace MediaService.Controllers
                 return Unauthorized();
             }
         }
-
-        // удаление файла по ID (только владельцем)
+        
         [HttpDelete("{mediaId}")]
         [Authorize]
         public async Task<IActionResult> Delete(Guid mediaId)
         {
-            // Получаем ID текущего пользователя из JWT
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null) return Unauthorized();
 
@@ -111,10 +98,10 @@ namespace MediaService.Controllers
             }
             catch (UnauthorizedAccessException)
             {
-                return Forbid(); // 403 если пользователь не владелец файла
+                return Forbid();
             }
         }
-        // удаление файла по URL (только владельцем)
+
         [HttpDelete("by-url")]
         [Authorize]
         public async Task<IActionResult> DeleteByUrl([FromQuery] string fileUrl)
@@ -138,12 +125,10 @@ namespace MediaService.Controllers
             }
         }
 
-        // Получить все публичные файлы текущего пользователя
         [HttpGet("my-public-files")]
         [Authorize]
         public IActionResult GetMyPublicFiles()
         {
-            // Получаем ID текущего пользователя из JWT
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim == null) return Unauthorized();
 

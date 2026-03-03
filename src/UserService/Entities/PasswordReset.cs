@@ -3,7 +3,7 @@
     public class PasswordReset
     {
         public long Id { get; set; }
-        public long? UserId { get; set; } // Связь с пользователем
+        public long? UserId { get; set; }
         public string Email { get; set; } = string.Empty;
         public string CodeHash { get; set; } = string.Empty;
         public bool Used { get; set; } = false;

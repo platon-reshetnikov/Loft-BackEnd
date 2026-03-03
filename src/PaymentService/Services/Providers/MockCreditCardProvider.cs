@@ -1,10 +1,7 @@
 using Loft.Common.Enums;
-//
+
 namespace PaymentService.Services.Providers;
 
-/// <summary>
-/// Mock провайдер для оплаты кредитной картой
-/// </summary>
 public class MockCreditCardProvider : IPaymentProvider
 {
     private readonly ILogger<MockCreditCardProvider> _logger;
@@ -36,4 +33,3 @@ public class MockCreditCardProvider : IPaymentProvider
         return Task.FromResult(true);
     }
 }
-

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Loft.Common.DTOs;
 using Loft.Common.Enums;
 
@@ -18,10 +16,4 @@ public interface IOrderService
     Task<decimal> CalculateOrderTotal(IEnumerable<OrderItemDTO> items);
     Task<IEnumerable<OrderDTO>> GetAllOrders();
     Task<OrderDTO?> CheckoutFromCart(long customerId, long? shippingAddressId = null, ShippingAddressDTO? customShippingAddress = null);
-    
-    /*
-     * Примечания: CreateOrder возвращает созданный OrderDTO; CancelOrder переводит статус в
-     * CANCELED и триггерит сопутствующие действия (refund/stock) на реализации.
-     * CreateOrderWithShipping позволяет указать адрес доставки (либо по ID, либо кастомный).
-     */
 }

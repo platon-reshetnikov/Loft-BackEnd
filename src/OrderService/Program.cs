@@ -1,9 +1,5 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using OrderService.Data;
-using OrderService.Mappings;
 using OrderService.Services;
 
 namespace OrderService
@@ -16,11 +12,9 @@ namespace OrderService
 
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-            // Добавляем контроллеры и авторизацию (нужны для UseAuthorization)
             builder.Services.AddControllers();
             builder.Services.AddAuthorization();
             
-            // Swagger/OpenAPI
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "OrderService API", Version = "v1" });
@@ -34,22 +28,18 @@ namespace OrderService
             });
             
             builder.Services.AddDbContext<OrderDbContext>(options =>
-                options.UseNpgsql(connectionString, // UseNpgsql использует строку подключения
+                options.UseNpgsql(connectionString,
                     npgsqlOptions =>
                     {
                         npgsqlOptions.MigrationsAssembly(typeof(Program).Assembly.FullName);
                     }));
 
-            // Регистрируем AutoMapper
             builder.Services.AddAutoMapper(typeof(Program).Assembly);
 
-            // Регистрируем сервисы
             builder.Services.AddScoped<IOrderService, OrderService.Services.OrderService>();
             
-            // Регистрируем ServiceAuthenticationHandler для добавления JWT токенов в запросы
             builder.Services.AddTransient<ServiceAuthenticationHandler>();
             
-            // HttpClient для связи с другими микросервисами
             builder.Services.AddHttpClient("CartService", client =>
             {
                 var cartServiceUrl = builder.Configuration["Services:CartService"] ?? "http://localhost:5002";
@@ -74,7 +64,6 @@ namespace OrderService
             })
             .AddHttpMessageHandler<ServiceAuthenticationHandler>();
             
-            // HttpClient для PaymentService
             builder.Services.AddHttpClient("PaymentService", client =>
             {
                 var paymentServiceUrl = builder.Configuration["Services:PaymentService"] ?? "http://localhost:5005";
@@ -83,7 +72,6 @@ namespace OrderService
             })
             .AddHttpMessageHandler<ServiceAuthenticationHandler>();
 
-            // HttpClient для ShippingAddressService
             builder.Services.AddHttpClient("ShippingAddressService", client =>
             {
                 var shippingServiceUrl = builder.Configuration["Services:ShippingAddressService"] ?? "http://localhost:5006";
@@ -95,19 +83,16 @@ namespace OrderService
 
             var app = builder.Build();
 
-            // Swagger middleware
             app.UseSwagger();
             app.UseSwaggerUI();
             
-            // Настраиваем конвейер обработки запросов
             app.UseRouting();
-            // Вызываем UseAuthorization только если зарегистрирован IAuthorizationService
             if (app.Services.GetService(typeof(Microsoft.AspNetCore.Authorization.IAuthorizationService)) != null)
             {
                 app.UseAuthorization();
             }
              app.MapControllers();
-
+             
              app.Run();
         }
     }

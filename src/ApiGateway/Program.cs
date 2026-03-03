@@ -12,29 +12,25 @@ namespace ApiGateway
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Конфигурация Ocelot по окружениям
             builder.Configuration
                 .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"ocelot.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true);
 
             builder.Services.AddOcelot();
 
-            // Добавляем контроллеры (для /api/gateway и прочих локальных эндпоинтов)
             builder.Services.AddControllers();
 
-            // Настройка CORS
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowAll", policy =>
                 {
-                    policy.SetIsOriginAllowed(_ => true) // Разрешаем все origins
+                    policy.SetIsOriginAllowed(_ => true)
                           .AllowAnyMethod()
                           .AllowAnyHeader()
-                          .AllowCredentials(); // Важно для работы с cookies/auth
+                          .AllowCredentials();
                 });
             });
 
-            // Swagger/OpenAPI
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "ApiGateway API", Version = "v1" });
@@ -49,10 +45,8 @@ namespace ApiGateway
 
             var app = builder.Build();
 
-            // CORS должен идти ПЕРВЫМ, до Ocelot
             app.UseCors("AllowAll");
 
-            // Логирующий middleware для отладки входящих запросов (особенно /api/auth/*)
             app.Use(async (context, next) =>
             {
                 try
@@ -60,7 +54,6 @@ namespace ApiGateway
                     var path = context.Request.Path.Value ?? string.Empty;
                     Console.WriteLine($"[ApiGateway] Incoming request: {context.Request.Method} {path}");
 
-                    // Логируем тело для POST/PUT (делаем буферизацию)
                     if (context.Request.Method == HttpMethods.Post || context.Request.Method == HttpMethods.Put)
                     {
                         context.Request.EnableBuffering();
@@ -83,7 +76,6 @@ namespace ApiGateway
                 await next();
             });
 
-            // Убираем trailing slash ДО Ocelot
             app.Use(async (context, next) =>
             {
                 var path = context.Request.Path.Value;
@@ -94,11 +86,9 @@ namespace ApiGateway
                 await next();
             });
 
-            // Swagger middleware (должно идти до Ocelot middleware)
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            // Перехват корня и health до Ocelot
             app.Use(async (ctx, next) =>
             {
                 var path = ctx.Request.Path.Value?.TrimEnd('/') ?? string.Empty;
@@ -115,12 +105,8 @@ namespace ApiGateway
                 await next();
             });
 
-            // Включаем контроллеры (например, /api/gateway)
             app.MapControllers();
-
-            // Проксирование запросов по конфигурации Ocelot
             app.UseOcelot().Wait();
-
             app.Run();
         }
     }

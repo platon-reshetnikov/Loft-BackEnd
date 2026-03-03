@@ -34,10 +34,7 @@
         <ProjectReference Include="..\UserService\UserService.csproj" />
         <ProjectReference Include="..\\Common\\Loft.Common\\Loft.Common.csproj" />
     </ItemGroup>
-
-    <!-- Публиковать только свои appsettings для Docker -->
     <ItemGroup>
-        <!-- Убрать appsettings.Development.json из publish -->
         <None Update="appsettings.Development.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <CopyToPublishDirectory>Never</CopyToPublishDirectory>
@@ -46,5 +43,4 @@
     <ItemGroup>
         <Folder Include="Migrations\" />
     </ItemGroup>
-
 </Project>

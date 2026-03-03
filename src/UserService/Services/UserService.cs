@@ -3,15 +3,11 @@ using Loft.Common.DTOs;
 using Loft.Common.Enums;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using UserService.Data;
 using UserService.Entities;
 using MailKit.Net.Smtp;
-using MailKit.Security;
 using MimeKit;
 
 namespace UserService.Services;
@@ -43,7 +39,6 @@ public class UserService : IUserService
 
         _configuration = configuration;
 
-        // Загружаем настройки почты из конфигурации
         _smtpHost = _configuration["Email:Smtp:Host"];
         _smtpPort = int.Parse(_configuration["Email:Smtp:Port"]);
         _smtpUser = _configuration["Email:Smtp:User"];
@@ -103,7 +98,6 @@ public class UserService : IUserService
         existing.LastName = user.LastName;
         existing.AvatarUrl = user.AvatarUrl;
         existing.Phone = user.Phone;
-        // Email/Role изменения опускаем для безопасности
 
         await _db.SaveChangesAsync();
         return _mapper.Map<UserDTO>(existing);
@@ -188,13 +182,11 @@ public class UserService : IUserService
 
         var normalizedEmail = email.Trim().ToLower();
 
-        // Check if user exists by external provider
         var user = await _db.Users.FirstOrDefaultAsync(u => 
             u.ExternalProvider == provider && u.ExternalProviderId == providerId);
 
         if (user != null)
         {
-            // Update existing OAuth user
             user.Email = email;
             user.FirstName = firstName ?? user.FirstName;
             user.LastName = lastName ?? user.LastName;
@@ -204,12 +196,10 @@ public class UserService : IUserService
             return _mapper.Map<UserDTO>(user);
         }
 
-        // Check if user exists by email (linking existing account)
         user = await _db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
         
         if (user != null)
         {
-            // Link external provider to existing user
             user.ExternalProvider = provider;
             user.ExternalProviderId = providerId;
             user.FirstName = firstName ?? user.FirstName;
@@ -220,7 +210,6 @@ public class UserService : IUserService
             return _mapper.Map<UserDTO>(user);
         }
 
-        // Create new OAuth user
         var newUser = new User
         {
             Email = email,
@@ -231,7 +220,7 @@ public class UserService : IUserService
             CanSell = false,
             ExternalProvider = provider,
             ExternalProviderId = providerId,
-            PasswordHash = string.Empty // OAuth users don't have password
+            PasswordHash = string.Empty
         };
 
         _db.Users.Add(newUser);
@@ -240,7 +229,6 @@ public class UserService : IUserService
         return _mapper.Map<UserDTO>(newUser);
     }
 
-    // === Сброс пароля — отправка кода ===
     public async Task<bool> SendResetCodeAsync(string email)
     {
         if (string.IsNullOrWhiteSpace(email)) return false;
@@ -251,7 +239,7 @@ public class UserService : IUserService
         var code = GenerateNumericCode(6);
         var codeHash = ComputeSha256Hash(code);
 
-        var ttlMinutes = 60; //    Время жизни кода в минутах
+        var ttlMinutes = 60;
         var reset = new PasswordReset
         {
             Email = normalized,
@@ -300,7 +288,6 @@ public class UserService : IUserService
         return true;
     }
 
-    // === Смена пароля по коду ===
     public async Task<bool> ResetPasswordWithCodeAsync(string email, string code, string newPassword)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(newPassword))
@@ -327,7 +314,6 @@ public class UserService : IUserService
         return true;
     }
 
-    // === Вспомогательные методы ===
     private static string GenerateNumericCode(int digits)
     {
         using var rng = RandomNumberGenerator.Create();
@@ -346,5 +332,4 @@ public class UserService : IUserService
         foreach (var b in bytes) sb.Append(b.ToString("x2"));
         return sb.ToString();
     }
-
 }

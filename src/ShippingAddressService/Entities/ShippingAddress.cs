@@ -13,7 +13,5 @@ public class ShippingAddress
     public string? RecipientName { get; set; }
     public bool IsDefault { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
-    // Navigation property (внешняя сущность)
     public User? Customer { get; set; }
 }

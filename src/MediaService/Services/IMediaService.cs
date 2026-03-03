@@ -1,4 +1,3 @@
-using Loft.Common.DTOs;
 using MediaService.Entities;
 
 namespace MediaService.Services
@@ -13,4 +12,3 @@ namespace MediaService.Services
         IEnumerable<MediaFile> GetFilesByUser(int userId);
     }
 }
-

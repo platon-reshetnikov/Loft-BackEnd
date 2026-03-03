@@ -3,24 +3,10 @@ using Stripe;
 
 namespace PaymentService.Services;
 
-/// <summary>
-/// Сервис для работы со Stripe Checkout Sessions
-/// </summary>
 public interface IStripeCheckoutService
 {
-    /// <summary>
-    /// Создать Checkout Session для оплаты заказа
-    /// </summary>
     Task<string> CreateCheckoutSessionAsync(long orderId, decimal amount, string successUrl, string cancelUrl);
-    
-    /// <summary>
-    /// Получить информацию о Checkout Session
-    /// </summary>
     Task<Session> GetCheckoutSessionAsync(string sessionId);
-    
-    /// <summary>
-    /// Обработать вебхук от Stripe
-    /// </summary>
     Task<bool> HandleWebhookAsync(string payload, string signature);
 }
 
@@ -83,7 +69,6 @@ public class StripeCheckoutService : IStripeCheckoutService
                     { "order_id", orderId.ToString() },
                     { "integration", "loft_payment_service" }
                 },
-                // Автоматическая отмена неоплаченных сессий через 24 часа
                 ExpiresAt = DateTime.UtcNow.AddHours(24)
             };
 
@@ -144,8 +129,7 @@ public class StripeCheckoutService : IStripeCheckoutService
             }
 
             _logger.LogInformation("[STRIPE CHECKOUT] Webhook received: {EventType}", stripeEvent.Type);
-
-            // Обрабатываем событие успешной оплаты
+            
             if (stripeEvent.Type == "checkout.session.completed")
             {
                 var session = stripeEvent.Data.Object as Session;
@@ -186,9 +170,6 @@ public class StripeCheckoutService : IStripeCheckoutService
             _logger.LogInformation(
                 "[STRIPE CHECKOUT] Session {SessionId} completed for order {OrderId}, payment status: {PaymentStatus}",
                 session.Id, orderId, session.PaymentStatus);
-
-            // Здесь можно обновить статус платежа в базе данных
-            // Например, найти платеж по orderId и обновить его статус на COMPLETED
             
             if (session.PaymentStatus == "paid")
             {
@@ -217,7 +198,5 @@ public class StripeCheckoutService : IStripeCheckoutService
             "[STRIPE CHECKOUT] Session {SessionId} expired for order {OrderId}",
             session.Id, orderId);
 
-        // Здесь можно обновить статус платежа на CANCELLED или удалить неоплаченный платеж
     }
 }
-

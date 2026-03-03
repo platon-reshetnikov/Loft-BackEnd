@@ -1,7 +1,6 @@
 using AutoMapper;
 using Loft.Common.DTOs;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using ShippingAddressService.Data;
 using ShippingAddressService.Entities;
 
@@ -55,18 +54,15 @@ public class ShippingAddressService : IShippingAddressService
         address.CustomerId = customerId;
         address.CreatedAt = DateTime.UtcNow;
 
-        // Если это первый адрес пользователя или помечен как дефолтный
         var hasExistingAddresses = await _context.ShippingAddresses
             .AnyAsync(a => a.CustomerId == customerId);
 
         if (!hasExistingAddresses)
         {
-            // Первый адрес автоматически становится дефолтным
             address.IsDefault = true;
         }
         else if (address.IsDefault)
         {
-            // Снимаем флаг IsDefault с других адресов этого пользователя
             await UnsetDefaultAddresses(customerId);
         }
 
@@ -90,14 +86,12 @@ public class ShippingAddressService : IShippingAddressService
             return null;
         }
 
-        // Обновляем поля
         address.Address = addressDto.Address;
         address.City = addressDto.City;
         address.PostalCode = addressDto.PostalCode;
         address.Country = addressDto.Country;
         address.RecipientName = addressDto.RecipientName;
 
-        // Если указано IsDefault и оно true
         if (addressDto.IsDefault.HasValue && addressDto.IsDefault.Value && !address.IsDefault)
         {
             await UnsetDefaultAddresses(customerId);
@@ -131,7 +125,6 @@ public class ShippingAddressService : IShippingAddressService
         _context.ShippingAddresses.Remove(address);
         await _context.SaveChangesAsync();
 
-        // Если удалили дефолтный адрес, назначаем дефолтным следующий (если есть)
         if (wasDefault)
         {
             var nextAddress = await _context.ShippingAddresses
@@ -165,7 +158,6 @@ public class ShippingAddressService : IShippingAddressService
 
         if (address.IsDefault)
         {
-            // Уже дефолтный
             return true;
         }
 

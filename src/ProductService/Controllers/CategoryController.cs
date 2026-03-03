@@ -1,11 +1,7 @@
 ﻿using Loft.Common.DTOs;
-using Loft.Common.Enums;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Services;
-using System.Threading.Tasks;
-using UserService.Services;
 
 namespace ProductService.Controllers
 {
@@ -20,7 +16,6 @@ namespace ProductService.Controllers
             _service = service;
         }
 
-        // Получение списка категорий с фильтром по родителю
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -28,7 +23,6 @@ namespace ProductService.Controllers
             return Ok(categories);
         }
 
-        // Получение категории по ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
@@ -36,20 +30,7 @@ namespace ProductService.Controllers
             if (category == null) return NotFound();
             return Ok(category);
         }
-
-        // Создание категории
-       /* [HttpPost]
-        [Authorize] // <-- Требуем аутентификацию
-        public async Task<IActionResult> Create([FromBody] CategoryDto categoryDto)
-        {
-            var userId = GetUserId();
-            if (userId == null) return Unauthorized();
-
-            if (!IsModerator()) return Forbid();
-
-            var category = await _service.CreateCategory(categoryDto);
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
-        }*/
+        
         [HttpPost]
         [Authorize]
         public async Task<IActionResult> Create([FromBody] CategoryDto categoryDto)
@@ -57,7 +38,6 @@ namespace ProductService.Controllers
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
 
-            // 🔹 Отладка: вывести все claims из токена
             Console.WriteLine("=== JWT Claims Start ===");
             foreach (var claim in User.Claims)
             {
@@ -71,9 +51,8 @@ namespace ProductService.Controllers
             return CreatedAtAction(nameof(GetById), new { id = category.Id }, category);
         }
 
-        // Обновление категории
         [HttpPut("{id}")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Update(int id, [FromBody] CategoryDto categoryDto)
         {
             var userId = GetUserId();
@@ -86,9 +65,8 @@ namespace ProductService.Controllers
             return Ok(updated);
         }
 
-        // Удаление категории
         [HttpDelete("{id}")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             var userId = GetUserId();
@@ -100,9 +78,8 @@ namespace ProductService.Controllers
             return NoContent();
         }
 
-        // Привязка атрибута к категории
         [HttpPost("{id}/attributes")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize] 
         public async Task<IActionResult> AssignAttribute(int id, [FromQuery] int attributeId, [FromQuery] bool isRequired, [FromQuery] int orderIndex)
         {
             var userId = GetUserId();
@@ -114,9 +91,8 @@ namespace ProductService.Controllers
             return Ok(categoryAttribute);
         }
 
-        // Удаление привязки атрибута
         [HttpDelete("{id}/attributes/{attributeId}")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> RemoveAttribute(int id, int attributeId)
         {
             var userId = GetUserId();
@@ -128,7 +104,6 @@ namespace ProductService.Controllers
             return NoContent();
         }
 
-        // Получение атрибутов категории
         [HttpGet("{id}/attributes")]
         public async Task<IActionResult> GetAttributes(int id)
         {

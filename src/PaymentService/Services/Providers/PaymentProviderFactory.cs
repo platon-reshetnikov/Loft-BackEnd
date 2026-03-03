@@ -1,10 +1,7 @@
 using Loft.Common.Enums;
-//
+
 namespace PaymentService.Services.Providers;
 
-/// <summary>
-/// Фабрика для получения платежного провайдера по методу оплаты
-/// </summary>
 public class PaymentProviderFactory
 {
     private readonly Dictionary<PaymentMethod, IPaymentProvider> _providers;
@@ -30,4 +27,3 @@ public class PaymentProviderFactory
         return provider;
     }
 }
-

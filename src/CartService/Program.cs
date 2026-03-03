@@ -1,10 +1,7 @@
 using CartService.Data;
 using CartService.Mappings;
 using CartService.Services;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace CartService
 {
@@ -14,11 +11,9 @@ namespace CartService
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
             builder.Services.AddAutoMapper(typeof(CartProfile));
 
-            // Swagger/OpenAPI
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "CartService API", Version = "v1" });
@@ -34,26 +29,23 @@ namespace CartService
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
             builder.Services.AddDbContext<CartDbContext>(options =>
-                options.UseNpgsql(connectionString, // UseNpgsql использует строку подключения
+                options.UseNpgsql(connectionString,
                     npgsqlOptions =>
                     {
                         npgsqlOptions.MigrationsAssembly(typeof(Program).Assembly.FullName);
                     }));
             
-            // Сервис корзины
             builder.Services.AddScoped<ICartService, CartService.Services.CartService>();
             
-            // Регистрируем ServiceAuthenticationHandler для добавления токенов в запросы
             builder.Services.AddTransient<ServiceAuthenticationHandler>();
             
-            // HttpClient для связи с ProductService и UserService - используем именованные клиенты
             builder.Services.AddHttpClient("ProductService", client =>
             {
                 var productServiceUrl = builder.Configuration["Services:ProductService"] ?? "http://productservice:8080";
                 client.BaseAddress = new Uri(productServiceUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
             })
-            .AddHttpMessageHandler<ServiceAuthenticationHandler>(); // Добавляем JWT токен автоматически
+            .AddHttpMessageHandler<ServiceAuthenticationHandler>();
 
             builder.Services.AddHttpClient("UserService", client =>
             {
@@ -61,15 +53,13 @@ namespace CartService
                 client.BaseAddress = new Uri(userServiceUrl);
                 client.Timeout = TimeSpan.FromSeconds(30);
             })
-            .AddHttpMessageHandler<ServiceAuthenticationHandler>(); // Добавляем JWT токен автоматически
+            .AddHttpMessageHandler<ServiceAuthenticationHandler>();
 
             var app = builder.Build();
 
-            // Swagger middleware
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            // Настраиваем конвейер обработки запросов
             app.UseRouting();
             app.UseAuthorization();
             app.MapControllers();

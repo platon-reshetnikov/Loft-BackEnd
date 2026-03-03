@@ -1,18 +1,10 @@
 using AutoMapper;
 using Loft.Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using UserService.DTOs;
-using UserService.Entities;
 using UserService.Services;
 
 namespace UserService.Controllers
@@ -40,7 +32,6 @@ namespace UserService.Controllers
             if (user == null)
                 return NotFound(new { message = $"User with id {id} not found" });
 
-            // AutoMapper сделает конверсию сам:
             var publicUser = _mapper.Map<PublicUserDTO>(user);
 
             return Ok(publicUser);
@@ -81,7 +72,6 @@ namespace UserService.Controllers
             return Ok(updated);
         }
 
-        // POST api/users/me/avatar
         [HttpPost("me/avatar")]
         [Authorize]
         [Consumes("multipart/form-data")]
@@ -94,8 +84,7 @@ namespace UserService.Controllers
             var existing = await _userService.GetUserById(userId.Value);
             if (existing == null) return NotFound();
 
-            // validate content type (should be image) and size (<=5MB)
-            const long maxBytes = 5 * 1024 * 1024; // 5 MB
+            const long maxBytes = 5 * 1024 * 1024;
             if (!string.IsNullOrEmpty(avatar.ContentType) && !avatar.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             {
                 return BadRequest(new { message = "Only image files are allowed" });
@@ -105,7 +94,6 @@ namespace UserService.Controllers
                 return BadRequest(new { message = "File is too large. Max 5 MB allowed" });
             }
 
-            // ensure wwwroot/avatars exists
             var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
             var avatarsDir = Path.Combine(webRoot, "avatars");
             if (!Directory.Exists(avatarsDir)) Directory.CreateDirectory(avatarsDir);
@@ -123,16 +111,13 @@ namespace UserService.Controllers
             }
             catch (Exception ex)
             {
-                // log if logger available; return 500 to frontend
                 return StatusCode(500, new { message = "Failed to save file", detail = ex.Message });
             }
 
-            // delete old avatar file if exists and is local
             try
             {
                 if (!string.IsNullOrEmpty(existing.AvatarUrl))
                 {
-                    // AvatarUrl is stored as relative path like "/avatars/xyz.png"
                     var relative = existing.AvatarUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
                     var oldPath = Path.Combine(webRoot, relative);
                     if (System.IO.File.Exists(oldPath))
@@ -143,7 +128,6 @@ namespace UserService.Controllers
             }
             catch { /* ignore */ }
 
-            // use relative path for AvatarUrl
             var relativeUrl = $"/avatars/{fileName}";
 
             var toUpdate = existing with { AvatarUrl = relativeUrl };
@@ -190,12 +174,11 @@ namespace UserService.Controllers
 
         protected long? GetUserIdFromClaims()
         {
-            // Попробуем несколько общих типов соответственно возможным картам claim-ов:
             var tryTypes = new[]
             {
-            ClaimTypes.NameIdentifier, // "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-            "nameid",                  // иногда сокращённое имя
-            JwtRegisteredClaimNames.Sub, // "sub"
+            ClaimTypes.NameIdentifier, 
+            "nameid",                  
+            JwtRegisteredClaimNames.Sub,
             "id",
             "user_id",
             ClaimTypes.Name,
@@ -207,8 +190,6 @@ namespace UserService.Controllers
                 var claim = User.FindFirst(t)?.Value;
                 if (!string.IsNullOrEmpty(claim) && long.TryParse(claim, out var id)) return id;
             }
-
-            // Резервный метод: найти любой числовой claim в токене
             foreach (var c in User.Claims)
             {
                 if (!string.IsNullOrEmpty(c.Value) && long.TryParse(c.Value, out var id)) return id;
@@ -217,7 +198,6 @@ namespace UserService.Controllers
             return null;
         }
 
-        // === Запрос кода для сброса пароля ===
         [HttpPost("request-password-reset")]
         public async Task<IActionResult> RequestPasswordReset([FromBody] ResetPasswordRequestDto dto)
         {
@@ -228,7 +208,6 @@ namespace UserService.Controllers
             return Ok(new { success = result });
         }
 
-        // === Подтверждение смены пароля по коду ===
         [HttpPost("confirm-password-reset")]
         public async Task<IActionResult> ConfirmPasswordReset([FromBody] ConfirmResetPasswordDto dto)
         {
@@ -242,5 +221,4 @@ namespace UserService.Controllers
             return Ok(new { success = true });
         }
     }
-
  }

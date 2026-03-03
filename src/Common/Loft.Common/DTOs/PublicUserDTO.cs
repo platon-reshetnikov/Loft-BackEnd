@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Loft.Common.DTOs
 
-namespace Loft.Common.DTOs
 {
     public record class PublicUserDTO
     {

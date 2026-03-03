@@ -78,7 +78,6 @@ public class AuthController : ControllerBase
 
         try
         {
-            // Log request metadata for debugging
             try
             {
                 Console.WriteLine("[GoogleAuth] Incoming request headers:");
@@ -112,7 +111,6 @@ public class AuthController : ControllerBase
                 return Unauthorized(new { message = "Google OAuth not configured on server" });
             }
             
-            // Декодируем токен для логирования (без валидации)
             try
             {
                 var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
@@ -126,7 +124,6 @@ public class AuthController : ControllerBase
                 Console.WriteLine($"[GoogleAuth] Could not decode token for logging: {ex.Message}");
             }
             
-            // Verify Google ID token
             var payload = await GoogleJsonWebSignature.ValidateAsync(request.IdToken, new GoogleJsonWebSignature.ValidationSettings
             {
                 Audience = new[] { googleClientId }
@@ -140,14 +137,12 @@ public class AuthController : ControllerBase
             
             Console.WriteLine($"[GoogleAuth] Token validated successfully for email: {payload.Email}");
 
-            // Extract user information
             var email = payload.Email;
             var googleId = payload.Subject;
             var firstName = payload.GivenName;
             var lastName = payload.FamilyName;
             var avatarUrl = payload.Picture;
 
-            // Create or update user
             var user = await _userService.CreateOrUpdateOAuthUser(
                 email, 
                 "Google", 
@@ -159,7 +154,6 @@ public class AuthController : ControllerBase
 
             Console.WriteLine($"[GoogleAuth] User created/updated: ID={user.Id}, Email={user.Email}");
 
-            // Generate JWT token
             var token = await _userService.GenerateJwt(user);
 
             return Ok(new GoogleAuthResponse
@@ -183,4 +177,3 @@ public class AuthController : ControllerBase
         }
     }
 }
-

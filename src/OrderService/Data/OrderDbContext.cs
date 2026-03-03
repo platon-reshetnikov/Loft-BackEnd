@@ -14,7 +14,6 @@ public class OrderDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
         
-        // Настройка Order
         modelBuilder.Entity<Order>(entity =>
         {
             entity.HasKey(o => o.Id);
@@ -28,7 +27,6 @@ public class OrderDbContext : DbContext
             entity.Property(o => o.CustomerEmail)
                 .HasMaxLength(200);
             
-            // Настройка полей адреса доставки
             entity.Property(o => o.ShippingAddress)
                 .HasMaxLength(500);
             
@@ -44,17 +42,14 @@ public class OrderDbContext : DbContext
             entity.Property(o => o.ShippingRecipientName)
                 .HasMaxLength(200);
             
-            // Индекс для быстрого поиска по адресу доставки
             entity.HasIndex(o => o.ShippingAddressId);
             
-            // Связь Order -> OrderItems
             entity.HasMany(o => o.OrderItems)
                 .WithOne()
                 .HasForeignKey(oi => oi.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
         
-        // Настройка OrderItem
         modelBuilder.Entity<OrderItem>(entity =>
         {
             entity.HasKey(oi => oi.Id);

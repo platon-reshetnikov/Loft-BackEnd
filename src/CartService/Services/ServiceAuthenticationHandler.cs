@@ -18,7 +18,6 @@ public class ServiceAuthenticationHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        // Получаем service token из конфигурации
         var serviceToken = _configuration["ServiceAuthentication:Token"];
         
         if (!string.IsNullOrEmpty(serviceToken))
@@ -34,4 +33,3 @@ public class ServiceAuthenticationHandler : DelegatingHandler
         return await base.SendAsync(request, cancellationToken);
     }
 }
-

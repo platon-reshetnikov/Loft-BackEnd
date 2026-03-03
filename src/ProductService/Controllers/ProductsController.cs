@@ -3,8 +3,6 @@ using Loft.Common.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProductService.Services;
-using System.Threading.Tasks;
-using UserService.Services;
 
 namespace ProductService.Controllers
 {
@@ -19,7 +17,6 @@ namespace ProductService.Controllers
             _service = service;
         }
 
-        // Получение списка товаров с фильтром по категории/продавцу и пагинацией
         [HttpPost("filter")]
         public async Task<IActionResult> GetFilteredProducts([FromBody] ProductFilterDto filter)
         {
@@ -27,11 +24,10 @@ namespace ProductService.Controllers
             return Ok(result);
         }
 
-        // Получение одного товара по ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            long? userId = GetUserId();        // может быть null, и это ок
+            long? userId = GetUserId();
             bool isModerator = false;
 
             if (userId != null)
@@ -41,7 +37,6 @@ namespace ProductService.Controllers
                 var productTmp = await _service.GetProductById(id, true);
                 if (productTmp == null) return NotFound();
 
-                // Если товар принадлежит авторизованному пользователю — даём ему права модератора
                 if (productTmp.IdUser == userId)
                 {
                     isModerator = true;
@@ -65,24 +60,22 @@ namespace ProductService.Controllers
             return Ok(products);
         }
 
-        // Создание нового товара
         [HttpPost("create")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Create([FromBody] ProductDto productDto)
         {
-            var userId = GetUserId(); // Получаем ID пользователя из токена
+            var userId = GetUserId();
             if (userId == null) return Unauthorized();
 
-            productDto.IdUser = (int)userId; // Устанавливаем ID пользователя в DTO
-            productDto.Status = Loft.Common.Enums.ModerationStatus.Pending; // Устанавливаем статус на PENDING по умолчанию
+            productDto.IdUser = (int)userId;
+            productDto.Status = Loft.Common.Enums.ModerationStatus.Pending;
 
             var product = await _service.CreateProduct(productDto);
             return CreatedAtAction(nameof(GetById), new { id = product.Id }, product);
         }
 
-        // Обновление товара
         [HttpPut("{id}")]
-        [Authorize] // <-- Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Update(int id, [FromBody] ProductDto productDto)
         {
             var userId = GetUserId();
@@ -102,9 +95,8 @@ namespace ProductService.Controllers
             return Ok(updated);
         }
 
-        // Удаление товара
         [HttpDelete("{id}")]
-        [Authorize] // Требуем аутентификацию
+        [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
             var userId = GetUserId();
@@ -120,20 +112,17 @@ namespace ProductService.Controllers
             return NoContent();
         }
 
-        // Обновление количества товара (используется OrderService при покупке)
         [HttpPut("{id}/quantity")]
         public async Task<IActionResult> UpdateQuantity(int id, [FromBody] UpdateQuantityRequest request)
         {
             var product = await _service.GetProductById(id, true);
             if (product == null) return NotFound();
 
-            // Проверяем, что это физический товар
             if (product.Type == ProductType.Digital)
             {
                 return BadRequest(new { error = "Cannot update quantity for digital products" });
             }
 
-            // Проверяем, что новое количество не отрицательное
             if (request.Quantity < 0)
             {
                 return BadRequest(new { error = "Quantity cannot be negative" });
@@ -145,20 +134,17 @@ namespace ProductService.Controllers
             return Ok(updated);
         }
 
-        // Уменьшение количества товара при покупке (используется OrderService)
         [HttpPut("{id}/reduce-quantity")]
         public async Task<IActionResult> ReduceQuantity(int id, [FromBody] ReduceQuantityRequest request)
         {
             var product = await _service.GetProductById(id, true);
             if (product == null) return NotFound();
 
-            // Проверяем, что это физический товар
             if (product.Type == ProductType.Digital)
             {
                 return Ok(new { message = "Digital product - quantity not changed", product });
             }
 
-            // Проверяем, что достаточно товара на складе
             if (product.Quantity < request.Quantity)
             {
                 return BadRequest(new { error = $"Insufficient quantity. Available: {product.Quantity}, Requested: {request.Quantity}" });

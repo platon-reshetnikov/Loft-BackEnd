@@ -2,16 +2,10 @@ using Loft.Common.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http;
-using System.Net.Http.Json;
 using System.Security.Claims;
 
 namespace UserService.Controllers;
 
-/// <summary>
-/// Контроллер для управления адресами доставки в профиле пользователя
-/// Проксирует запросы к ShippingAddressService
-/// </summary>
 [ApiController]
 [Route("api/users/me/shipping-addresses")]
 [Authorize]
@@ -54,10 +48,7 @@ public class ProfileShippingAddressController : ControllerBase
 
         return null;
     }
-
-    /// <summary>
-    /// Получить все адреса доставки текущего пользователя
-    /// </summary>
+    
     [HttpGet]
     public async Task<ActionResult<IEnumerable<ShippingAddressDTO>>> GetMyAddresses()
     {
@@ -87,10 +78,7 @@ public class ProfileShippingAddressController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Получить дефолтный адрес доставки
-    /// </summary>
+    
     [HttpGet("default")]
     public async Task<ActionResult<ShippingAddressDTO>> GetMyDefaultAddress()
     {
@@ -125,10 +113,7 @@ public class ProfileShippingAddressController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Получить конкретный адрес по ID
-    /// </summary>
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<ShippingAddressDTO>> GetAddressById(long id)
     {
@@ -156,7 +141,6 @@ public class ProfileShippingAddressController : ControllerBase
 
             var address = await response.Content.ReadFromJsonAsync<ShippingAddressDTO>();
             
-            // Проверка прав доступа
             if (address != null && address.CustomerId != userId.Value)
             {
                 return Forbid();
@@ -170,10 +154,7 @@ public class ProfileShippingAddressController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Создать новый адрес доставки
-    /// </summary>
+    
     [HttpPost]
     public async Task<ActionResult<ShippingAddressDTO>> CreateAddress([FromBody] ShippingAddressCreateDTO addressDto)
     {
@@ -203,10 +184,7 @@ public class ProfileShippingAddressController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Обновить существующий адрес доставки
-    /// </summary>
+    
     [HttpPut("{id}")]
     public async Task<ActionResult<ShippingAddressDTO>> UpdateAddress(long id, [FromBody] ShippingAddressUpdateDTO addressDto)
     {
@@ -218,7 +196,6 @@ public class ProfileShippingAddressController : ControllerBase
 
         try
         {
-            // Сначала проверяем, что адрес принадлежит пользователю
             var client = _httpClientFactory.CreateClient("ShippingAddressService");
             var checkResponse = await client.GetAsync($"/api/shipping-addresses/{id}");
             
@@ -236,7 +213,6 @@ public class ProfileShippingAddressController : ControllerBase
                 }
             }
 
-            // Обновляем адрес
             var response = await client.PutAsJsonAsync($"/api/shipping-addresses/{id}", addressDto);
 
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -259,10 +235,7 @@ public class ProfileShippingAddressController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Удалить адрес доставки
-    /// </summary>
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAddress(long id)
     {
@@ -274,7 +247,6 @@ public class ProfileShippingAddressController : ControllerBase
 
         try
         {
-            // Сначала проверяем, что адрес принадлежит пользователю
             var client = _httpClientFactory.CreateClient("ShippingAddressService");
             var checkResponse = await client.GetAsync($"/api/shipping-addresses/{id}");
             
@@ -292,7 +264,6 @@ public class ProfileShippingAddressController : ControllerBase
                 }
             }
 
-            // Удаляем адрес
             var response = await client.DeleteAsync($"/api/shipping-addresses/{id}");
 
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -314,10 +285,7 @@ public class ProfileShippingAddressController : ControllerBase
             return StatusCode(500, new { message = "Internal server error" });
         }
     }
-
-    /// <summary>
-    /// Установить адрес как дефолтный
-    /// </summary>
+    
     [HttpPost("{id}/set-default")]
     public async Task<IActionResult> SetDefaultAddress(long id)
     {
@@ -329,7 +297,6 @@ public class ProfileShippingAddressController : ControllerBase
 
         try
         {
-            // Сначала проверяем, что адрес принадлежит пользователю
             var client = _httpClientFactory.CreateClient("ShippingAddressService");
             var checkResponse = await client.GetAsync($"/api/shipping-addresses/{id}");
             
@@ -346,8 +313,7 @@ public class ProfileShippingAddressController : ControllerBase
                     return Forbid();
                 }
             }
-
-            // Устанавливаем как дефолтный
+            
             var response = await client.PostAsync($"/api/shipping-addresses/{id}/set-default", null);
 
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
@@ -370,4 +336,3 @@ public class ProfileShippingAddressController : ControllerBase
         }
     }
 }
-

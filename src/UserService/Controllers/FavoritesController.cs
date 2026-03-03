@@ -8,7 +8,7 @@ namespace UserService.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Все методы доступны только авторизованным
+    [Authorize]
     public class FavoritesController : ControllerBase
     {
         private readonly IFavoriteService _favoriteService;
@@ -18,8 +18,6 @@ namespace UserService.Controllers
             _favoriteService = favoriteService;
         }
 
-        // GET /api/favorites
-        // Получить все избранные товары текущего пользователя
         [HttpGet]
         public async Task<IActionResult> GetFavorites()
         {
@@ -29,9 +27,7 @@ namespace UserService.Controllers
             FavoritesListDto favorites = await _favoriteService.GetFavoritesAsync(userId.Value);
             return Ok(favorites);
         }
-
-        // POST /api/favorites/{productId}
-        // Добавить товар в избранное
+        
         [HttpPost("{productId}")]
         public async Task<IActionResult> AddFavorite(int productId)
         {
@@ -41,9 +37,7 @@ namespace UserService.Controllers
             await _favoriteService.AddFavoriteAsync(userId.Value, productId);
             return Ok();
         }
-
-        // DELETE /api/favorites/{productId}
-        // Удалить товар из избранного
+        
         [HttpDelete("{productId}")]
         public async Task<IActionResult> RemoveFavorite(int productId)
         {
@@ -53,9 +47,7 @@ namespace UserService.Controllers
             await _favoriteService.RemoveFavoriteAsync(userId.Value, productId);
             return Ok();
         }
-
-        // ---------------------------
-        // Получаем userId из токена JWT
+        
         private long? GetUserId()
         {
             var tryTypes = new[]
@@ -73,7 +65,6 @@ namespace UserService.Controllers
                 if (!string.IsNullOrEmpty(claim) && long.TryParse(claim, out var id))
                     return id;
             }
-
             return null;
         }
     }

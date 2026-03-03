@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Loft.Common.DTOs
 
-namespace Loft.Common.DTOs
 {
     public class ProductFilterDto
     {
-        public string? Search { get; set; }         //  Поиск по названию товара
+        public string? Search { get; set; } 
         public int? CategoryId { get; set; }
         public int? SellerId { get; set; }
         public decimal? MinPrice { get; set; }
@@ -21,9 +16,9 @@ namespace Loft.Common.DTOs
 
 public class PagedResultFilterDto<T>
 {
-    public int TotalCount { get; set; }    // общее количество товаров
-    public int TotalPages { get; set; }    // общее количество страниц
-    public int Page { get; set; }          // текущая страница
-    public int PageSize { get; set; }      // размер страницы
-    public IEnumerable<T> Items { get; set; }  // список товаров на странице
+    public int TotalCount { get; set; }
+    public int TotalPages { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public IEnumerable<T> Items { get; set; }
 }

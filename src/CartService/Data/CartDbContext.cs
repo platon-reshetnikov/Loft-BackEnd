@@ -20,16 +20,15 @@ public class CartDbContext : DbContext
         {
             b.HasKey(c => c.Id);
             b.HasIndex(c => c.CustomerId).IsUnique();
-            b.Ignore(c => c.Customer); // Внешняя сущность из UserService, не маппим её здесь
+            b.Ignore(c => c.Customer);
             b.HasMany(c => c.CartItems).WithOne(ci => ci.Cart).HasForeignKey(ci => ci.CartId).OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<CartItem>(b =>
         {
             b.HasKey(ci => ci.Id);
-            b.Ignore(ci => ci.Product); // Внешняя сущность из ProductService
+            b.Ignore(ci => ci.Product);
             
-            // Настраиваем типы данных для оптимизации производительности
             b.Property(ci => ci.Price).HasColumnType("decimal(18,2)");
             b.Property(ci => ci.ProductName).HasMaxLength(500);
             b.Property(ci => ci.ImageUrl).HasMaxLength(1000);

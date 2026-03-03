@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using Loft.Common.Enums;
 
 namespace UserService.Entities;
@@ -13,11 +12,7 @@ public class User
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Phone { get; set; }
-
-    // OAuth fields
-    public string? ExternalProvider { get; set; } // e.g., "Google", "Facebook"
-    public string? ExternalProviderId { get; set; } // User ID from external provider
-
-    // Массив идентификаторов избранных продуктов пользователя
+    public string? ExternalProvider { get; set; }
+    public string? ExternalProviderId { get; set; }
     public int[] FavoriteProductIds { get; set; } = Array.Empty<int>();
 }

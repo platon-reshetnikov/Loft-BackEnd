@@ -1,14 +1,10 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using ShippingAddressService.Data;
 using ShippingAddressService.Mappings;
 using ShippingAddressService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System;
 using System.Security.Claims;
 
 namespace ShippingAddressService
@@ -19,13 +15,10 @@ namespace ShippingAddressService
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Добавляем сервисы контроллеров
             builder.Services.AddControllers();
             
-            // AutoMapper
             builder.Services.AddAutoMapper(typeof(ShippingAddressProfile));
 
-            // Swagger/OpenAPI
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo 
@@ -35,7 +28,6 @@ namespace ShippingAddressService
                     Description = "API для управления адресами доставки пользователей"
                 });
                 
-                // Only include controllers from this assembly (avoid controllers from referenced projects)
                 c.DocInclusionPredicate((docName, apiDesc) =>
                 {
                     var cad = apiDesc.ActionDescriptor as Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
@@ -44,7 +36,6 @@ namespace ShippingAddressService
                 });
             });
 
-            // Database connection
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<ShippingAddressDbContext>(options =>
                 options.UseNpgsql(connectionString,
@@ -53,17 +44,14 @@ namespace ShippingAddressService
                         npgsqlOptions.MigrationsAssembly(typeof(Program).Assembly.FullName);
                     }));
 
-            // Register services
             builder.Services.AddScoped<IShippingAddressService, Services.ShippingAddressService>();
 
-            // HttpClient для связи с UserService (если понадобится)
             builder.Services.AddHttpClient("UserService", client =>
             {
                 var userServiceUrl = builder.Configuration["Services:UserService"] ?? "http://userservice:8080";
                 client.BaseAddress = new Uri(userServiceUrl);
             });
 
-            // JWT Authentication
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtKey = jwtSection.GetValue<string>("Key");
             var jwtIssuer = jwtSection.GetValue<string>("Issuer");
@@ -101,13 +89,11 @@ namespace ShippingAddressService
 
             var app = builder.Build();
 
-            // Swagger middleware
             app.UseSwagger();
             app.UseSwaggerUI();
 
-            // Настраиваем конвейер обработки запросов
             app.UseRouting();
-            app.UseAuthentication(); // JWT Authentication
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
 

@@ -2,15 +2,10 @@ using MediaService.Data;
 using MediaService.Mappings;
 using MediaService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
 using System.Security.Claims;
 using System.Text;
 
@@ -27,26 +22,19 @@ namespace MediaService
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddEnvironmentVariables();
 
-
-            // Configure DbContext (PostgreSQL) - use connection string or default file
             var defaultConn = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<MediaDbContext>(options =>
                 options.UseNpgsql(defaultConn, npgsqlOptions =>
                 {
-                    //        npgsqlOptions.MigrationsAssembly(typeof(Program).Assembly.FullName);
                 }));
 
-            // Контроллеры
             builder.Services.AddControllers();
 
-            // AutoMapper
             builder.Services.AddAutoMapper(typeof(MediaProfile));
 
-            // Сервисы
             builder.Services.AddScoped<IMediaService, MediaStorageService>();
             builder.Services.AddScoped<IImageProcessingService, ImageProcessingService>();
 
-            // Настройка аутентификации JWT
             var jwtSection = builder.Configuration.GetSection("Jwt");
             var jwtKey = jwtSection.GetValue<string>("Key");
             var issuer = jwtSection.GetValue<string>("Issuer");
@@ -85,7 +73,6 @@ namespace MediaService
 
             builder.Services.AddAuthorization();
 
-            // Swagger с поддержкой Bearer
             builder.Services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "UserService API", Version = "v1" });
@@ -107,14 +94,13 @@ namespace MediaService
                         Reference = new OpenApiReference
                    {
                  Type = ReferenceType.SecurityScheme,
-                 Id = "bearerAuth"  // <- обязательно совпадает с AddSecurityDefinition
+                 Id = "bearerAuth"
                    }
                    },
                   Array.Empty<string>()
                  }
                     });
 
-                // Only include controllers from this assembly (avoid controllers from referenced projects)
                 c.DocInclusionPredicate((docName, apiDesc) =>
                 {
                     var cad = apiDesc.ActionDescriptor as Microsoft.AspNetCore.Mvc.Controllers.ControllerActionDescriptor;
@@ -122,7 +108,6 @@ namespace MediaService
                     return cad.ControllerTypeInfo.Assembly == typeof(Program).Assembly;
                 });
 
-                // Map IFormFile to binary in OpenAPI - simple mapping without filter
                 c.MapType<Microsoft.AspNetCore.Http.IFormFile>(() => new Microsoft.OpenApi.Models.OpenApiSchema { Type = "string", Format = "binary" });
             });
 
@@ -136,7 +121,7 @@ namespace MediaService
             app.UseSwaggerUI(c =>
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Media Service API v1");
-                c.RoutePrefix = string.Empty; // Swagger UI будет на /
+                c.RoutePrefix = string.Empty;
             });
 
             app.UseCors();
@@ -149,11 +134,10 @@ namespace MediaService
 
             app.UseAuthentication();
             app.UseAuthorization();
-
+            
             app.MapControllers();
 
             app.Run();
         }
     }
 }
-

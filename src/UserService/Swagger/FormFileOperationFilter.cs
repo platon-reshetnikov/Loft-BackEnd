@@ -1,5 +1,3 @@
-using System.Linq;
-using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
@@ -9,11 +7,9 @@ namespace UserService.Swagger
     {
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
-            // Если в методе нет параметров, ничего не делаем
             var parameters = context.ApiDescription.ParameterDescriptions;
             if (parameters == null || !parameters.Any()) return;
 
-            // Собираем параметры, которые приходят из формы и тип которых IFormFile
             var fileParams = parameters
                 .Where(p => p.Source != null && p.Source.Id == "Form")
                 .Where(p => p.ModelMetadata?.ModelType == typeof(IFormFile) ||
@@ -22,7 +18,6 @@ namespace UserService.Swagger
 
             if (!fileParams.Any()) return;
 
-            // Формируем схему multipart/form-data
             var schema = new OpenApiSchema { Type = "object", Properties = new System.Collections.Generic.Dictionary<string, OpenApiSchema>() };
 
             foreach (var p in parameters)
@@ -35,7 +30,6 @@ namespace UserService.Swagger
                 }
                 else
                 {
-                    // Оставляем остальные поля как строковые (simple handling)
                     schema.Properties[name] = new OpenApiSchema { Type = "string" };
                 }
             }
@@ -53,4 +47,3 @@ namespace UserService.Swagger
         }
     }
 }
-

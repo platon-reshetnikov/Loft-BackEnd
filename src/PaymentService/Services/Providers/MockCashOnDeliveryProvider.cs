@@ -1,10 +1,7 @@
 using Loft.Common.Enums;
-//
+
 namespace PaymentService.Services.Providers;
 
-/// <summary>
-/// Mock провайдер для оплаты наличными при доставке
-/// </summary>
 public class MockCashOnDeliveryProvider : IPaymentProvider
 {
     private readonly ILogger<MockCashOnDeliveryProvider> _logger;
@@ -36,4 +33,3 @@ public class MockCashOnDeliveryProvider : IPaymentProvider
         return Task.FromResult(true);
     }
 }
-

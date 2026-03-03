@@ -1,7 +1,5 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using CartService.Services;
-using Loft.Common.DTOs;
 
 namespace CartService.Controllers
 {
@@ -16,7 +14,6 @@ namespace CartService.Controllers
             _cartService = cartService;
         }
 
-        // GET api/carts
         [HttpGet("")]
         public async Task<IActionResult> GetAllCarts()
         {
@@ -24,7 +21,6 @@ namespace CartService.Controllers
             return Ok(carts);
         }
 
-        // GET api/carts/{customerId} - Альтернативный маршрут для получения корзины
         [HttpGet("{customerId}")]
         public async Task<IActionResult> GetCart(long customerId)
         {
@@ -33,7 +29,6 @@ namespace CartService.Controllers
             return Ok(cart);
         }
 
-        // GET api/carts/customer/{customerId}
         [HttpGet("customer/{customerId}")]
         public async Task<IActionResult> GetCartByCustomer(long customerId)
         {
@@ -42,7 +37,6 @@ namespace CartService.Controllers
             return Ok(cart);
         }
 
-        // GET api/carts/{cartId}/items
         [HttpGet("{cartId}/items")]
         public async Task<IActionResult> GetCartItems(long cartId)
         {
@@ -50,7 +44,6 @@ namespace CartService.Controllers
             return Ok(items);
         }
 
-        // POST api/carts/{customerId}/items
         [HttpPost("{customerId}/items")]
         public async Task<IActionResult> AddToCart(long customerId, [FromBody] AddItemRequest req)
         {
@@ -59,7 +52,6 @@ namespace CartService.Controllers
             return Ok(cart);
         }
 
-        // PUT api/carts/{customerId}/items
         [HttpPut("{customerId}/items")]
         public async Task<IActionResult> UpdateCartItem(long customerId, [FromBody] UpdateItemRequest req)
         {
@@ -77,7 +69,6 @@ namespace CartService.Controllers
             }
         }
 
-        // DELETE api/carts/{customerId}/items/{productId}
         [HttpDelete("{customerId}/items/{productId}")]
         public async Task<IActionResult> RemoveFromCart(long customerId, long productId)
         {
@@ -85,7 +76,6 @@ namespace CartService.Controllers
             return NoContent();
         }
 
-        // DELETE api/carts/{customerId}
         [HttpDelete("{customerId}")]
         public async Task<IActionResult> ClearCart(long customerId)
         {
@@ -93,7 +83,6 @@ namespace CartService.Controllers
             return NoContent();
         }
 
-        // POST api/carts/merge
         [HttpPost("merge")]
         public async Task<IActionResult> MergeCarts([FromBody] MergeRequest req)
         {
@@ -102,7 +91,6 @@ namespace CartService.Controllers
             return NoContent();
         }
 
-        // Вспомогательные типы запросов
         public record AddItemRequest(long ProductId, int Quantity);
         public record UpdateItemRequest(long ProductId, int Quantity);
         public record MergeRequest(long FromCustomerId, long ToCustomerId);

@@ -2,10 +2,6 @@
 using Loft.Common.Enums;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using UserService.Data;
 using UserService.Entities;
 using UserService.Hubs;
@@ -24,7 +20,6 @@ public class ChatService : IChatService
 
     public async Task<ChatMessageDTO> SendMessage(long senderId, long recipientId, string? messageText, string? fileUrl = null)
     {
-        // Ищем чат между пользователями
         var chat = await _db.Chats
             .Include(c => c.Messages)
             .FirstOrDefaultAsync(c =>
@@ -42,8 +37,6 @@ public class ChatService : IChatService
             await _db.SaveChangesAsync();
         }
 
-
-        // Загружаем отправителя, чтобы узнать роль
         var sender = await _db.Users.FirstOrDefaultAsync(u => u.Id == senderId);
         bool isMod = sender?.Role == Role.MODERATOR;
 
@@ -58,8 +51,7 @@ public class ChatService : IChatService
 
         _db.ChatMessages.Add(message);
         await _db.SaveChangesAsync();
-
-        // Отправляем сообщение получателю через SignalR
+        
         await _hub.Clients.User(recipientId.ToString())
             .SendAsync("ReceiveMessage", new ChatMessageDTO
             {
@@ -86,7 +78,6 @@ public class ChatService : IChatService
         };
     }
 
-    // Получение переписки между двумя пользователями
     public async Task<List<ChatMessageDTO>> GetConversation(long userId, long otherUserId)
     {
         var chat = await _db.Chats
@@ -133,7 +124,7 @@ public class ChatService : IChatService
 
         await _db.SaveChangesAsync();
     }
-    // Получение чата по его идентификатору
+
     public async Task<ChatDTO?> GetChatById(long chatId)
     {
         var chat = await _db.Chats.Include(c => c.Messages).FirstOrDefaultAsync(c => c.Id == chatId);
@@ -159,7 +150,7 @@ public class ChatService : IChatService
             }
         };
     }
-    // Удаление чата по его идентификатору
+
     public async Task DeleteChat(long chatId)
     {
         var chat = await _db.Chats.Include(c => c.Messages).FirstOrDefaultAsync(c => c.Id == chatId);

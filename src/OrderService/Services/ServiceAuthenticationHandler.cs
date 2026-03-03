@@ -18,7 +18,6 @@ public class ServiceAuthenticationHandler : DelegatingHandler
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        // Получаем service token из конфигурации
         var serviceToken = _configuration["ServiceAuthentication:Token"];
         
         if (!string.IsNullOrEmpty(serviceToken))
@@ -30,7 +29,6 @@ public class ServiceAuthenticationHandler : DelegatingHandler
         {
             _logger.LogWarning($"❌ ServiceAuthentication:Token NOT FOUND in configuration! Request to {request.RequestUri} will fail with 401");
             
-            // Проверяем все ключи конфигурации для диагностики
             var allKeys = _configuration.AsEnumerable().Where(k => k.Key.Contains("ServiceAuthentication")).ToList();
             if (allKeys.Any())
             {
@@ -45,4 +43,3 @@ public class ServiceAuthenticationHandler : DelegatingHandler
         return await base.SendAsync(request, cancellationToken);
     }
 }
-

@@ -9,7 +9,6 @@ public class OrderDbContextFactory : IDesignTimeDbContextFactory<OrderDbContext>
     {
         var optionsBuilder = new DbContextOptionsBuilder<OrderDbContext>();
 
-        // Используем строку подключения из переменной окружения или значение по умолчанию
         var connectionString = Environment.GetEnvironmentVariable("ORDER_CONNECTION")
                              ?? "Host=172.17.4.22;Port=5432;Database=test_loft_shop;Username=developer;Password=Devp@ssw0rddB4589";
 
@@ -21,4 +20,3 @@ public class OrderDbContextFactory : IDesignTimeDbContextFactory<OrderDbContext>
         return new OrderDbContext(optionsBuilder.Options);
     }
 }
-

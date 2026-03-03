@@ -7,4 +7,3 @@ namespace MediaService.Services
         string GetImageFormat(string fileName);
     }
 }
-
